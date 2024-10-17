@@ -1,0 +1,16 @@
+
+admin_bff_pod_role_oidc_access: default
+
+admin_bff_image: default
+admin_bff_java_xms: default
+admin_bff_java_xmx: default
+admin_bff_monitoring_url: default
+admin_bff_redis_host: default
+admin_bff_redis_port: default
+admin_bff_tracing_url: default
+admin_bff_products_baseuri: default
+admin_bff_users_baseuri: default
+admin_bff_orders_baseuri: default
+
+admin_bff_ingress_host: default
+

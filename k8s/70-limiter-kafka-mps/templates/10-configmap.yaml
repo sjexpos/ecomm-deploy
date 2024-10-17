@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: limiter-kafka-mps-config
+  namespace: {{ .Release.Namespace }}
+data:
+  JAVA_XMS: {{ .Values.limiter_kafka_mps_java_xms }}
+  JAVA_XMX: {{ .Values.limiter_kafka_mps_java_xmx }}
+  PORT: '7000'
+  MONITORING_URL: '{{ .Values.limiter_kafka_mps_monitoring_url }}'
+  KAFKA_SERVERS: '{{ .Values.limiter_kafka_mps_kafka_servers }}'
+  TRACING_URL: '{{ .Values.limiter_kafka_mps_tracing_url }}'
+  PROCESSOR_SERVICE_BASEURI: '{{ .Values.limiter_kafka_mps_processor_baseuri }}'
+  READER_QUEUE_SIZE: '{{ .Values.limiter_kafka_mps_reader_queue_size }}'
+  WRITER_THREADS: '{{ .Values.limiter_kafka_mps_writer_threads }}'
+  

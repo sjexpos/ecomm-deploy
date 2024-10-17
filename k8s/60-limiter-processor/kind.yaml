@@ -1,0 +1,12 @@
+
+limiter_processor_pod_role_oidc_access:
+
+limiter_processor_service_image: sjexposecomm/limiter-processor:latest
+limiter_processor_service_java_xms: 256m
+limiter_processor_service_java_xmx: 512m
+limiter_processor_service_monitoring_url: http://monitoring-service:9090
+limiter_processor_service_kafka_servers: 172.18.0.1:9092
+limiter_processor_service_tracing_url: http://172.18.0.1:4318/v1/traces
+limiter_processor_service_redis_nodes: 172.18.0.1:6391, 172.18.0.1:6392, 172.18.0.1:6393
+limiter_processor_service_rate_limit: 100
+

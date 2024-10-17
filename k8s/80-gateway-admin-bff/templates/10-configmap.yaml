@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-admin-bff-config
+  namespace: {{ .Release.Namespace }}
+data:
+  JAVA_XMS: {{ .Values.gateway_java_xms }}
+  JAVA_XMX: {{ .Values.gateway_java_xmx }}
+  PORT: '7000'
+  MONITORING_URL: '{{ .Values.gateway_monitoring_url }}'
+  REDIS_HOST: '{{ .Values.gateway_redis_host }}'
+  REDIS_PORT: '{{ .Values.gateway_redis_port }}'
+  KAFKA_SERVERS: '{{ .Values.gateway_kafka_servers }}'
+  KAFKA_SECURITY_PROTOCOL: '{{ .Values.gateway_kafka_security_protocol }}'
+  KAFKA_SASL_MECHANISM: '{{ .Values.gateway_kafka_sasl_mechanism }}'
+  KAFKA_EXTRAS: '{{ .Values.gateway_kafka_extras }}'
+  TRACING_URL: '{{ .Values.gateway_tracing_url }}'
+  JWT_SECRET: '{{ .Values.gateway_jwt_secret }}'
+  FORWARD_API_NAME: '{{ .Values.gateway_forward_api_name }}'
+  FORWARD_URL: '{{ .Values.gateway_forward_url }}'
+  USERS_SERVICE_BASEURI: '{{ .Values.gateway_users_service_baseuri }}'
+  {{ if not (empty .Values.kafka_password) }}
+  KAFKA_SASL_JAAS_CONFIG: '{{ print "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"" .Values.kafka_password "\";" }}'
+  {{ end }}

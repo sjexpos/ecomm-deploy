@@ -1,0 +1,7 @@
+
+monitoring_service_pod_role_oidc_access: default
+
+monitoring_service_image: default
+monitoring_service_java_xms: default
+monitoring_service_java_xmx: default
+

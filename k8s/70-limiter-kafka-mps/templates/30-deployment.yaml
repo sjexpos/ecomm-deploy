@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: limiter-kafka-mps
+  name: limiter-kafka-mps
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: limiter-kafka-mps
+  template:
+    metadata:
+      labels:
+        app: limiter-kafka-mps
+    spec:
+      serviceAccountName: limiter-kafka-mps-account
+      containers:
+        - name: limiter-kafka-mps
+          image: {{ .Values.limiter_kafka_mps_image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7000
+              name: http-port
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          envFrom:
+            - configMapRef:
+                name: limiter-kafka-mps-config
+

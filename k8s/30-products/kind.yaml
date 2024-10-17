@@ -1,0 +1,20 @@
+
+products_pod_role_oidc_access:
+
+products_service_image: sjexposecomm/products-service:latest
+products_service_java_xms: 256m
+products_service_java_xmx: 1g
+products_service_monitoring_url: http://monitoring-service:9090
+products_service_database_host: 172.18.0.1
+products_service_database_port: 5432
+products_service_database_schema: ecomm_products
+products_service_database_user: products_service
+products_service_database_password: "1234"
+products_service_redis_host: 172.18.0.1
+products_service_redis_port: 6379
+products_service_assets_bucket: ecomm-assets-dev
+products_service_opensearch: " -Dspring.jpa.properties.hibernate.search.backend.hosts=172.18.0.1:9200 "
+products_service_tracing_url: http://172.18.0.1:4318/v1/traces
+
+products_service_ingress_host: products.kind.ecomm.io
+

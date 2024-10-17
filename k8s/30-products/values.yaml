@@ -1,0 +1,20 @@
+
+products_pod_role_oidc_access: default
+
+products_service_image: default
+products_service_java_xms: default
+products_service_java_xmx: default
+products_service_monitoring_url: default
+products_service_database_host: default
+products_service_database_port: 5432
+products_service_database_schema: default
+products_service_database_user: default
+products_service_database_password: "default"
+products_service_redis_host: default
+products_service_redis_port: 6379
+products_service_assets_bucket: default
+products_service_opensearch: default
+products_service_tracing_url: default
+
+products_service_ingress_host: default
+

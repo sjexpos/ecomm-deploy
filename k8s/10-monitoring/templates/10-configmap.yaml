@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-service-config
+  namespace: {{ .Release.Namespace }}
+data:
+  JAVA_XMS: {{ .Values.monitoring_service_java_xms }}
+  JAVA_XMX: {{ .Values.monitoring_service_java_xmx }}
+  PORT: '7000'
+

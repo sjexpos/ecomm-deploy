@@ -1,0 +1,23 @@
+
+users_pod_role_oidc_access: default
+
+users_service_image: default
+users_service_java_xms: default
+users_service_java_xmx: default
+users_service_monitoring_url: default
+users_service_database_host: default
+users_service_database_port: 5432
+users_service_database_schema: default
+users_service_database_user: default
+users_service_database_password: "default"
+users_service_redis_host: default
+users_service_redis_port: 6379
+users_service_assets_bucket: default
+users_service_opensearch: default
+users_service_kafka_servers: default
+users_service_kafka_security_protocol: default
+users_service_kafka_sasl_mechanism: default
+users_service_kafka_extras: default
+users_service_tracing_url: default
+
+users_service_ingress_host: default

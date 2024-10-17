@@ -1,0 +1,346 @@
+########################################################
+#
+# Use
+#      docker-compose up
+#
+# Exported ports
+#   - 172.16.208.10     6379       => redis
+#   - 172.16.208.11     6391/16391 => cluster redis - node 1
+#   - 172.16.208.12     6392/16392 => cluster redis - node 2
+#   - 172.16.208.13     639316393  => cluster redis - node 3
+#   - 172.16.208.14                => redis-cluster-configure
+#   - 172.16.208.15     5540       => redisinsight
+#   - 172.16.208.20     5432       => postgres
+#   - 172.16.208.21                => flyway_users
+#   - 172.16.208.22                => flyway_products
+#   - 172.16.208.23                => flyway_orders
+#   - 172.16.208.30     5050       => gpadmin4
+#   - 172.16.208.40     9200/9600  => OpenSearch (node 1)
+#   - 172.16.208.50     5601       => OpenSearch Dashboard
+#   - 172.16.208.60     4566/4571  => localstack
+#   - 172.16.208.70     22181      => zookeeper
+#   - 172.16.208.80     9092/9997  => kafka
+#   - 172.16.208.90     9100       => kafka-ui
+#   - 172.16.208.100   10001       => gateway-swaggger-ui
+#   - 172.16.208.110    9411       => zipkin
+#   - 172.16.208.120    4318/16686 => jaeger
+#
+# docker-compose up
+
+networks:
+  backend:
+    name: local-development
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.208.0/24
+
+services:
+
+  redis:
+    image: 'redis:7.4-alpine'
+    restart: "no"
+    ports:
+      - '6379:6379'
+    networks:
+      backend:
+        ipv4_address: 172.16.208.10
+
+  redis-1:
+    image: "redis:7.4-alpine"
+    ports:
+      - "6391:6379"  # Map external port for Redis commands
+      - "16391:16379"  # Map external port for Redis cluster bus
+    networks:
+      backend:
+        ipv4_address: 172.16.208.11
+    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-1.aof --cluster-announce-ip 172.16.208.11 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+
+  redis-2:
+    image: "redis:7.4-alpine"
+    ports:
+      - "6392:6379"  # Map external port for Redis commands
+      - "16392:16379"  # Map external port for Redis cluster bus
+    networks:
+      backend:
+        ipv4_address: 172.16.208.12
+    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-2.aof --cluster-announce-ip 172.16.208.12 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+
+  redis-3:
+    image: "redis:7.4-alpine"
+    ports:
+      - "6393:6379"  # Map external port for Redis commands
+      - "16393:16379"  # Map external port for Redis cluster bus
+    networks:
+      backend:
+        ipv4_address: 172.16.208.13
+    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-3.aof --cluster-announce-ip 172.16.208.13 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+
+  redis-cluster-configure:
+    image: "redis:7.4-alpine"
+    networks:
+      backend:
+        ipv4_address: 172.16.208.14
+    depends_on:
+      - redis-1
+      - redis-2
+      - redis-3
+    volumes:
+      - ./:/mnt
+    command: redis-cli --cluster create 172.16.208.11:6379 172.16.208.12:6379 172.16.208.13:6379 --cluster-replicas 0 --cluster-yes
+
+  redisinsight:
+    image: "redis/redisinsight:2.56"
+    ports:
+      - "5540:5540"
+    networks:
+      backend:
+        ipv4_address: 172.16.208.15
+
+#  redis-commander:
+#    image: rediscommander/redis-commander:latest
+#    restart: "no"
+#    environment:
+#    - REDIS_HOSTS=local:redis:6379
+#    ports:
+#    - '7000:8081'
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.15
+
+  postgres:
+    image: 'postgres:14.4'
+    restart: "no"
+    volumes:
+      - './.data/postgres_data:/var/lib/postgresql/data'
+      - './docker-compose-init-postgres.sh:/docker-entrypoint-initdb.d/init-db.sh'
+      - ./:/mnt
+    environment:
+      - POSTGRES_DB=ecomm
+      - POSTGRES_USER=pgadmin
+      - POSTGRES_PASSWORD=1234
+    ports:
+      - '5432:5432'
+    networks:
+      backend:
+        ipv4_address: 172.16.208.20
+
+  flyway_users:
+    image: flyway/flyway:8.5
+    networks:
+      backend:
+        ipv4_address: 172.16.208.21
+    volumes:
+      - ${ECOMM_USERS_MODEL_SQL:-./../../users-service/db-scripts/src/main/resources}:/flyway/sql
+      - ./:/mnt
+    depends_on:
+      - postgres
+    entrypoint: ["/mnt/wait-for-it.sh", "postgres:5432", "-t", "300", "--", "/mnt/docker-compose-run-flyway.sh", "deployer", "1234", "ecomm_users" ] 
+
+  flyway_products:
+    image: flyway/flyway:8.5
+    networks:
+      backend:
+        ipv4_address: 172.16.208.22
+    volumes:
+      - ${ECOMM_PRODUCTS_MODEL_SQL:-./../../products-service/db-scripts/src/main/resources}:/flyway/sql
+      - ./:/mnt
+    depends_on:
+      - postgres
+    entrypoint: ["/mnt/wait-for-it.sh", "postgres:5432", "-t", "300", "--", "/mnt/docker-compose-run-flyway.sh", "deployer", "1234", "ecomm_products" ] 
+
+  flyway_orders:
+    image: flyway/flyway:8.5
+    networks:
+      backend:
+        ipv4_address: 172.16.208.23
+    volumes:
+      - ${ECOMM_ORDERS_MODEL_SQL:-./../../orders-service/db-scripts/src/main/resources}:/flyway/sql
+      - ./:/mnt
+    depends_on:
+      - postgres
+    entrypoint: ["/mnt/wait-for-it.sh", "postgres:5432", "-t", "300", "--", "/mnt/docker-compose-run-flyway.sh", "deployer", "1234", "ecomm_orders" ] 
+
+  pgadmin4:
+    image: 'thajeztah/pgadmin4'
+    restart: "no"
+    ports:
+      - '5050:5050'
+    depends_on: 
+      - 'postgres'
+    networks:
+      backend:
+        ipv4_address: 172.16.208.30
+
+  opensearch:
+    image: opensearchproject/opensearch:2.16.0
+    restart: "no"
+    environment:
+      - discovery.type=single-node
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - ./.data/opensearch_data:/usr/share/opensearch/data:rw
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      backend:
+        ipv4_address: 172.16.208.40
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.16.0
+    restart: "no"
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+    networks:
+      backend:
+        ipv4_address: 172.16.208.50
+
+  localstack:
+    image: 'localstack/localstack-full:0.12.11'
+    restart: "no"
+    ports:
+      - "127.0.0.1:53:53"
+      - "127.0.0.1:53:53/udp"
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4571:4571"
+    networks:
+      backend:
+        ipv4_address: 172.16.208.60
+    environment:
+      - START_WEB=1
+      - DEBUG=1
+      - HOSTNAME=localstack
+      - HOSTNAME_EXTERNAL=localstack
+      - PORT_WEB_UI=8888
+      - IMAGE_NAME=localstack/localstack-full:0.12.11
+      - DEFAULT_REGION=us-east-1
+      - LS_LOG=trace
+      - LAMBDA_EXECUTOR=docker
+      - LAMBDA_REMOTE_DOCKER=false
+      - LAMBDA_DOCKER_NETWORK=local-development
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOST_TMP_FOLDER=/tmp/localstack
+      - KINESIS_PROVIDER=kinesalite
+      - AWS_CBOR_DISABLE=1
+#      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/tmp/localstack:/tmp/localstack"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    restart: "no"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    networks:
+      backend:
+        ipv4_address: 172.16.208.70
+
+  kafka:
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    # An important note about accessing Kafka from clients on other machines:
+    # -----------------------------------------------------------------------
+    #
+    # The config used here exposes port 9092 for _external_ connections to the broker
+    # i.e. those from _outside_ the docker network. This could be from the host machine
+    # running docker, or maybe further afield if you've got a more complicated setup.
+    # If the latter is true, you will need to change the value 'localhost' in
+    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those
+    # remote clients
+    #
+    # For connections _internal_ to the docker network, such as from other services
+    # and components, use kafka:29092.
+    #
+    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    image: confluentinc/cp-kafka:7.7.0
+    restart: "no"
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+      - 9997:9997
+    networks:
+      backend:
+        ipv4_address: 172.16.208.80
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9997
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    restart: "no"
+    depends_on:
+      - "kafka"
+    ports:
+      - "9100:8080"
+    networks:
+      backend:
+        ipv4_address: 172.16.208.90
+    environment:
+      KAFKA_CLUSTERS_0_NAME: dev-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+      DYNAMIC_CONFIG_ENABLED: true
+
+  gateway-swaggger-ui:
+#    image: 'swaggerapi/swagger-ui:v3.49.0'
+    image: 'swaggerapi/swagger-ui:v5.17.14'
+    restart: "no"
+    ports:
+      - '10001:8080'
+    environment:
+      - SWAGGER_JSON_URL=http://localhost:8080/api
+    networks:
+      backend:
+        ipv4_address: 172.16.208.100
+   
+
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    restart: "no"
+    ports:
+      - 9411:9411
+    networks:
+      backend:
+        ipv4_address: 172.16.208.110
+      
+  jaeger:
+    image: jaegertracing/all-in-one:1.60.0
+    restart: "no"
+    ports:
+      - 4318:4318
+      - 16686:16686
+    networks:
+      backend:
+        ipv4_address: 172.16.208.120
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+

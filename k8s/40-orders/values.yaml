@@ -1,0 +1,21 @@
+
+orders_pod_role_oidc_access: default
+
+orders_service_image: default
+orders_service_java_xms: default
+orders_service_java_xmx: default
+orders_service_monitoring_url: default
+orders_service_database_host: default
+orders_service_database_port: 5432
+orders_service_database_schema: default
+orders_service_database_user: default
+orders_service_database_password: "default"
+orders_service_redis_host: default
+orders_service_redis_port: 6379
+orders_service_opensearch: default
+orders_service_tracing_url: default
+orders_service_products_baseuri: default
+orders_service_users_baseuri: default
+
+orders_service_ingress_host: default
+

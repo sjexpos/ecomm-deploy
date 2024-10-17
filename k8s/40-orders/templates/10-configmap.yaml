@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-service-config
+  namespace: {{ .Release.Namespace }}
+data:
+  JAVA_XMS: {{ .Values.orders_service_java_xms }}
+  JAVA_XMX: {{ .Values.orders_service_java_xmx }}
+  PORT: '7000'
+  MONITORING_URL: '{{ .Values.orders_service_monitoring_url }}'
+  DATABASE_HOST: '{{ .Values.orders_service_database_host }}'
+  DATABASE_PORT: '{{ .Values.orders_service_database_port }}'
+  DATABASE_SCHEMA: '{{ .Values.orders_service_database_schema }}'
+  DATABASE_USER: '{{ .Values.orders_service_database_user }}'
+  DATABASE_PASSWORD: '{{ .Values.orders_service_database_password }}'
+  REDIS_HOST: '{{ .Values.orders_service_redis_host }}'
+  REDIS_PORT: '{{ .Values.orders_service_redis_port }}'
+  OPENSEARCH_CONN: '{{ .Values.orders_service_opensearch }}'
+  TRACING_URL: '{{ .Values.orders_service_tracing_url }}'
+  PRODUCTS_SERVICE_BASEURI: '{{ .Values.orders_service_products_baseuri }}'
+  USERS_SERVICE_BASEURI: '{{ .Values.orders_service_users_baseuri }}'
+

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: limiter-processor-service
+  name: limiter-processor-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: limiter-processor-service
+  template:
+    metadata:
+      labels:
+        app: limiter-processor-service
+    spec:
+      serviceAccountName: limiter-processor-service-account
+      containers:
+        - name: limiter-processor-service
+          image: {{ .Values.limiter_processor_service_image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7000
+              name: http-port
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          envFrom:
+            - configMapRef:
+                name: limiter-processor-service-config
+

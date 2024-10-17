@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: products-service
+  name: products-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: products-service
+  template:
+    metadata:
+      labels:
+        app: products-service
+    spec:
+      serviceAccountName: products-service-account
+      containers:
+        - name: products-service
+          image: {{ .Values.products_service_image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7000
+              name: http-port
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          envFrom:
+            - configMapRef:
+                name: products-service-config
+

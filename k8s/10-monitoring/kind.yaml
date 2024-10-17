@@ -1,0 +1,7 @@
+
+monitoring_service_pod_role_oidc_access:
+
+monitoring_service_image: sjexposecomm/monitoring:latest
+monitoring_service_java_xms: 256m
+monitoring_service_java_xmx: 512m
+

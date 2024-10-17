@@ -1,0 +1,13 @@
+
+limiter_kafka_mps_pod_role_oidc_access:
+
+limiter_kafka_mps_image: sjexposecomm/limiter-kafka-mps:latest
+limiter_kafka_mps_java_xms: 256m
+limiter_kafka_mps_java_xmx: 1g
+limiter_kafka_mps_monitoring_url: http://monitoring-service:9090
+limiter_kafka_mps_kafka_servers: 172.18.0.1:9092
+limiter_kafka_mps_tracing_url: http://172.18.0.1:4318/v1/traces
+limiter_kafka_mps_processor_baseuri: http://limiter-processor:8000
+limiter_kafka_mps_reader_queue_size: 100000
+limiter_kafka_mps_writer_threads: 1000
+

@@ -1,0 +1,20 @@
+
+gateway_pod_role_oidc_access: default
+
+gateway_image: default
+gateway_java_xms: default
+gateway_java_xmx: default
+gateway_monitoring_url: default
+gateway_redis_host: default
+gateway_redis_port: default
+gateway_kafka_servers: default
+gateway_kafka_security_protocol: default
+gateway_kafka_sasl_mechanism: default
+gateway_kafka_extras: default
+gateway_tracing_url: default
+gateway_jwt_secret: default
+gateway_forward_api_name: default
+gateway_forward_url: default
+gateway_users_service_baseuri: default
+
+gateway_ingress_host: default

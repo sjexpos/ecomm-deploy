@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gateway-admin-bff
+  name: gateway-admin-bff
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: gateway-admin-bff
+  template:
+    metadata:
+      labels:
+        app: gateway-admin-bff
+    spec:
+      serviceAccountName: gateway-admin-bff-account
+      containers:
+        - name: gateway-admin-bff
+          image: {{ .Values.gateway_image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7000
+              name: http-port
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          envFrom:
+            - configMapRef:
+                name: gateway-admin-bff-config
+

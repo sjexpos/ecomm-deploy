@@ -1,0 +1,13 @@
+
+limiter_kafka_mps_pod_role_oidc_access: default
+
+limiter_kafka_mps_image: default
+limiter_kafka_mps_java_xms: default
+limiter_kafka_mps_java_xmx: default
+limiter_kafka_mps_monitoring_url: default
+limiter_kafka_mps_kafka_servers: default
+limiter_kafka_mps_tracing_url: default
+limiter_kafka_mps_processor_baseuri: default
+limiter_kafka_mps_reader_queue_size: default
+limiter_kafka_mps_writer_threads: default
+

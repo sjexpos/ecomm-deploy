@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: users-service
+  name: users-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: users-service
+  template:
+    metadata:
+      labels:
+        app: users-service
+    spec:
+      serviceAccountName: users-service-account
+      containers:
+        - name: users-service
+          image: {{ .Values.users_service_image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7000
+              name: http-port
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: http-port
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 1
+          envFrom:
+            - configMapRef:
+                name: users-service-config
+

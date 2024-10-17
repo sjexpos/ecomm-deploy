@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-bff-config
+  namespace: {{ .Release.Namespace }}
+data:
+  JAVA_XMS: {{ .Values.admin_bff_java_xms }}
+  JAVA_XMX: {{ .Values.admin_bff_java_xmx }}
+  PORT: '7000'
+  MONITORING_URL: '{{ .Values.admin_bff_monitoring_url }}'
+  REDIS_HOST: '{{ .Values.admin_bff_redis_host }}'
+  REDIS_PORT: '{{ .Values.admin_bff_redis_port }}'
+  TRACING_URL: '{{ .Values.admin_bff_tracing_url }}'
+  PRODUCTS_SERVICE_BASEURI: '{{ .Values.admin_bff_products_baseuri }}'
+  USERS_SERVICE_BASEURI: '{{ .Values.admin_bff_users_baseuri }}'
+  ORDERS_SERVICE_BASEURI: '{{ .Values.admin_bff_orders_baseuri }}'
+

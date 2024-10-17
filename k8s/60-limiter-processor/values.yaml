@@ -1,0 +1,12 @@
+
+limiter_processor_pod_role_oidc_access: default
+
+limiter_processor_service_image: default
+limiter_processor_service_java_xms: default
+limiter_processor_service_java_xmx: default
+limiter_processor_service_monitoring_url: default
+limiter_processor_service_kafka_servers: default
+limiter_processor_service_tracing_url: default
+limiter_processor_service_redis_nodes: default
+limiter_processor_service_rate_limit: default
+
