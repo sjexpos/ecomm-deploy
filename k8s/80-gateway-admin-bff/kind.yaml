@@ -5,13 +5,13 @@ gateway_image: sjexposecomm/gateway:latest
 gateway_java_xms: 256m
 gateway_java_xmx: 1g
 gateway_monitoring_url: http://monitoring-service:9090
-gateway_redis_host: 172.18.0.1
+gateway_redis_host:
 gateway_redis_port: 6379
 gateway_kafka_servers: kafka.default.svc.cluster.local:9092
 gateway_kafka_security_protocol: SASL_PLAINTEXT
 gateway_kafka_sasl_mechanism: PLAIN
 gateway_kafka_extras: ''
-gateway_tracing_url: http://172.18.0.1:4318/v1/traces
+gateway_tracing_url:
 gateway_jwt_secret: Yn2kjibddFAWtnPJ2AFlL8WXmohJMCvigQggaEypa5E=
 gateway_forward_api_name: admin
 gateway_forward_url: http://admin-bff:8000
@@ -19,5 +19,7 @@ gateway_users_service_baseuri: http://users-service:8000
 
 gateway_ingress_host: gateway-admin-bff.kind.ecomm.io
 
-kafka_password: ''
-#kafka_password: {{ $(kubectl get secret kafka-user-passwords --namespace default -o jsonpath=\'{.data.client-passwords}\' | base64 -d | cut -d , -f 1) }}
+# Special parameter to set by helm on command line
+# kafka_user:
+# kafka_password:
+# kind_gateway_id:

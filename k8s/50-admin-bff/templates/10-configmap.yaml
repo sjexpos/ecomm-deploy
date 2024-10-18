@@ -8,9 +8,17 @@ data:
   JAVA_XMX: {{ .Values.admin_bff_java_xmx }}
   PORT: '7000'
   MONITORING_URL: '{{ .Values.admin_bff_monitoring_url }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  REDIS_HOST: '{{ .Values.kind_gateway_id }}'
+  {{ else}}
   REDIS_HOST: '{{ .Values.admin_bff_redis_host }}'
+  {{ end }}
   REDIS_PORT: '{{ .Values.admin_bff_redis_port }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
+  {{ else }}
   TRACING_URL: '{{ .Values.admin_bff_tracing_url }}'
+  {{ end }}
   PRODUCTS_SERVICE_BASEURI: '{{ .Values.admin_bff_products_baseuri }}'
   USERS_SERVICE_BASEURI: '{{ .Values.admin_bff_users_baseuri }}'
   ORDERS_SERVICE_BASEURI: '{{ .Values.admin_bff_orders_baseuri }}'

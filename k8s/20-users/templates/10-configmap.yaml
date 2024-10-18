@@ -31,6 +31,9 @@ data:
   KAFKA_SERVERS: '{{ .Values.users_service_kafka_servers }}'
   KAFKA_SECURITY_PROTOCOL: '{{ .Values.users_service_kafka_security_protocol }}'
   KAFKA_SASL_MECHANISM: '{{ .Values.users_service_kafka_sasl_mechanism }}'
+  {{ if not (empty .Values.kafka_password) }}
+  KAFKA_SASL_JAAS_CONFIG: '{{ print "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" .Values.kafka_user "\" password=\"" .Values.kafka_password "\";" }}'
+  {{ end }}
   KAFKA_EXTRAS: '{{ .Values.users_service_kafka_extras }}'
   ASSETS_BUCKET: '{{ .Values.users_service_assets_bucket }}'
   AWS_ACCESS_KEY_ID: 'test'
@@ -42,7 +45,4 @@ data:
   TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
   {{ else }}
   TRACING_URL: '{{ .Values.users_service_tracing_url }}'
-  {{ end }}
-  {{ if not (empty .Values.kafka_password) }}
-  KAFKA_SASL_JAAS_CONFIG: '{{ print "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" .Values.kafka_user "\" password=\"" .Values.kafka_password "\";" }}'
   {{ end }}

@@ -8,19 +8,35 @@ data:
   JAVA_XMX: {{ .Values.products_service_java_xmx }}
   PORT: '7000'
   MONITORING_URL: '{{ .Values.products_service_monitoring_url }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  DATABASE_HOST: '{{ .Values.kind_gateway_id }}'
+  {{ else }}
   DATABASE_HOST: '{{ .Values.products_service_database_host }}'
+  {{ end }}
   DATABASE_PORT: '{{ .Values.products_service_database_port }}'
   DATABASE_SCHEMA: '{{ .Values.products_service_database_schema }}'
   DATABASE_USER: '{{ .Values.products_service_database_user }}'
   DATABASE_PASSWORD: '{{ .Values.products_service_database_password }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  REDIS_HOST: '{{ .Values.kind_gateway_id }}'
+  {{ else}}
   REDIS_HOST: '{{ .Values.products_service_redis_host }}'
+  {{ end }}
   REDIS_PORT: '{{ .Values.products_service_redis_port }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  OPENSEARCH_CONN: '-Dspring.jpa.properties.hibernate.search.backend.hosts={{ .Values.kind_gateway_id }}:9200'
+  {{ else}}
   OPENSEARCH_CONN: '{{ .Values.products_service_opensearch }}'
+  {{ end }}
   ASSETS_BUCKET: '{{ .Values.products_service_assets_bucket }}'
   AWS_ACCESS_KEY_ID: 'test'
   AWS_SECRET_ACCESS_KEY: 'test'
   AWS_ENDPOINT: 'http://localhost:4566'
   AWS_DEFAULT_REGION: 'us-east-1'
   AWS_REGION: 'us-east-1'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
+  {{ else }}
   TRACING_URL: '{{ .Values.products_service_tracing_url }}'
+  {{ end }}
 

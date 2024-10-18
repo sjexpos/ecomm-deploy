@@ -5,17 +5,19 @@ orders_service_image: sjexposecomm/orders-service:latest
 orders_service_java_xms: 256m
 orders_service_java_xmx: 1g
 orders_service_monitoring_url: http://monitoring-service:9090
-orders_service_database_host: 172.18.0.1
+orders_service_database_host:
 orders_service_database_port: 5432
 orders_service_database_schema: ecomm_orders
 orders_service_database_user: orders_service
 orders_service_database_password: "1234"
-orders_service_redis_host: 172.18.0.1
+orders_service_redis_host:
 orders_service_redis_port: 6379
-orders_service_opensearch: " -Dspring.jpa.properties.hibernate.search.backend.hosts=172.18.0.1:9200 "
-orders_service_tracing_url: http://172.18.0.1:4318/v1/traces
+orders_service_opensearch:
+orders_service_tracing_url:
 orders_service_products_baseuri: http://products-service:8000
 orders_service_users_baseuri: http://users-service:8000
 
 orders_service_ingress_host: orders.kind.ecomm.io
 
+# Special parameter to set by helm on command line
+# kind_gateway_id:

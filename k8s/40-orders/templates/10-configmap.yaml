@@ -8,15 +8,30 @@ data:
   JAVA_XMX: {{ .Values.orders_service_java_xmx }}
   PORT: '7000'
   MONITORING_URL: '{{ .Values.orders_service_monitoring_url }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  DATABASE_HOST: '{{ .Values.kind_gateway_id }}'
+  {{ else }}
   DATABASE_HOST: '{{ .Values.orders_service_database_host }}'
+  {{ end }}
   DATABASE_PORT: '{{ .Values.orders_service_database_port }}'
   DATABASE_SCHEMA: '{{ .Values.orders_service_database_schema }}'
   DATABASE_USER: '{{ .Values.orders_service_database_user }}'
   DATABASE_PASSWORD: '{{ .Values.orders_service_database_password }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  REDIS_HOST: '{{ .Values.kind_gateway_id }}'
+  {{ else}}
   REDIS_HOST: '{{ .Values.orders_service_redis_host }}'
+  {{ end }}
   REDIS_PORT: '{{ .Values.orders_service_redis_port }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  OPENSEARCH_CONN: '-Dspring.jpa.properties.hibernate.search.backend.hosts={{ .Values.kind_gateway_id }}:9200'
+  {{ else}}
   OPENSEARCH_CONN: '{{ .Values.orders_service_opensearch }}'
+  {{ end }}
+  {{ if not (empty .Values.kind_gateway_id) }}
+  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
+  {{ else }}
   TRACING_URL: '{{ .Values.orders_service_tracing_url }}'
+  {{ end }}
   PRODUCTS_SERVICE_BASEURI: '{{ .Values.orders_service_products_baseuri }}'
   USERS_SERVICE_BASEURI: '{{ .Values.orders_service_users_baseuri }}'
-

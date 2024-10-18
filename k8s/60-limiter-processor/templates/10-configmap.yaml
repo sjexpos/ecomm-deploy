@@ -9,7 +9,21 @@ data:
   PORT: '7000'
   MONITORING_URL: '{{ .Values.limiter_processor_service_monitoring_url }}'
   KAFKA_SERVERS: '{{ .Values.limiter_processor_service_kafka_servers }}'
+  KAFKA_SECURITY_PROTOCOL: '{{ .Values.limiter_processor_service_kafka_security_protocol }}'
+  KAFKA_SASL_MECHANISM: '{{ .Values.limiter_processor_service_kafka_sasl_mechanism }}'
+  {{ if not (empty .Values.kafka_password) }}
+  KAFKA_SASL_JAAS_CONFIG: '{{ print "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" .Values.kafka_user "\" password=\"" .Values.kafka_password "\";" }}'
+  {{ end }}
+  KAFKA_EXTRAS: '{{ .Values.limiter_processor_service_kafka_extras }}'
+  {{ if not (empty .Values.kind_gateway_id) }}
+  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
+  {{ else }}
   TRACING_URL: '{{ .Values.limiter_processor_service_tracing_url }}'
+  {{ end }}
+  {{ if not (empty .Values.kind_gateway_id) }}
+  REDIS_NODES: '{{ .Values.kind_gateway_id }}:6391, {{ .Values.kind_gateway_id }}:6392, {{ .Values.kind_gateway_id }}:6393 '
+  {{ else }}
   REDIS_NODES: '{{ .Values.limiter_processor_service_redis_nodes }}'
+  {{ end }}
   RATE_LIMIT: '{{ .Values.limiter_processor_service_rate_limit }}'
 
