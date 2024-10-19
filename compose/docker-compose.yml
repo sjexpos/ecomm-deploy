@@ -47,48 +47,48 @@ services:
       backend:
         ipv4_address: 172.16.208.10
 
-  redis-1:
-    image: "redis:7.4-alpine"
-    ports:
-      - "6391:6379"  # Map external port for Redis commands
-      - "16391:16379"  # Map external port for Redis cluster bus
-    networks:
-      backend:
-        ipv4_address: 172.16.208.11
-    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-1.aof --cluster-announce-ip 172.16.208.11 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
-
-  redis-2:
-    image: "redis:7.4-alpine"
-    ports:
-      - "6392:6379"  # Map external port for Redis commands
-      - "16392:16379"  # Map external port for Redis cluster bus
-    networks:
-      backend:
-        ipv4_address: 172.16.208.12
-    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-2.aof --cluster-announce-ip 172.16.208.12 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
-
-  redis-3:
-    image: "redis:7.4-alpine"
-    ports:
-      - "6393:6379"  # Map external port for Redis commands
-      - "16393:16379"  # Map external port for Redis cluster bus
-    networks:
-      backend:
-        ipv4_address: 172.16.208.13
-    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-3.aof --cluster-announce-ip 172.16.208.13 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
-
-  redis-cluster-configure:
-    image: "redis:7.4-alpine"
-    networks:
-      backend:
-        ipv4_address: 172.16.208.14
-    depends_on:
-      - redis-1
-      - redis-2
-      - redis-3
-    volumes:
-      - ./:/mnt
-    command: redis-cli --cluster create 172.16.208.11:6379 172.16.208.12:6379 172.16.208.13:6379 --cluster-replicas 0 --cluster-yes
+#  redis-1:
+#    image: "redis:7.4-alpine"
+#    ports:
+#      - "6391:6379"  # Map external port for Redis commands
+#      - "16391:16379"  # Map external port for Redis cluster bus
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.11
+#    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-1.aof --cluster-announce-ip 172.16.208.11 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+#
+#  redis-2:
+#    image: "redis:7.4-alpine"
+#    ports:
+#      - "6392:6379"  # Map external port for Redis commands
+#      - "16392:16379"  # Map external port for Redis cluster bus
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.12
+#    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-2.aof --cluster-announce-ip 172.16.208.12 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+#
+#  redis-3:
+#    image: "redis:7.4-alpine"
+#    ports:
+#      - "6393:6379"  # Map external port for Redis commands
+#      - "16393:16379"  # Map external port for Redis cluster bus
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.13
+#    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-3.aof --cluster-announce-ip 172.16.208.13 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+#
+#  redis-cluster-configure:
+#    image: "redis:7.4-alpine"
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.14
+#    depends_on:
+#      - redis-1
+#      - redis-2
+#      - redis-3
+#    volumes:
+#      - ./:/mnt
+#    command: redis-cli --cluster create 172.16.208.11:6379 172.16.208.12:6379 172.16.208.13:6379 --cluster-replicas 0 --cluster-yes
 
   redisinsight:
     image: "redis/redisinsight:2.56"

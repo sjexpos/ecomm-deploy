@@ -5,12 +5,13 @@ limiter_processor_service_image: sjexposecomm/limiter-processor:latest
 limiter_processor_service_java_xms: 256m
 limiter_processor_service_java_xmx: 512m
 limiter_processor_service_monitoring_url: http://monitoring-service:9090
+limiter_processor_service_redis_host:
+limiter_processor_service_redis_port: 6379
 limiter_processor_service_kafka_servers: kafka.default.svc.cluster.local:9092
 limiter_processor_service_kafka_security_protocol: SASL_PLAINTEXT
 limiter_processor_service_kafka_sasl_mechanism: PLAIN
 limiter_processor_service_kafka_extras: ''
 limiter_processor_service_tracing_url:
-limiter_processor_service_redis_nodes:
 limiter_processor_service_rate_limit: 100
 
 # Special parameter to set by helm on command line
