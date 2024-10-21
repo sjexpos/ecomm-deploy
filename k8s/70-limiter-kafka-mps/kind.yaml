@@ -10,7 +10,7 @@ limiter_kafka_mps_kafka_security_protocol: SASL_PLAINTEXT
 limiter_kafka_mps_kafka_sasl_mechanism: PLAIN
 limiter_kafka_mps_kafka_extras: ''
 limiter_kafka_mps_tracing_url:
-limiter_kafka_mps_processor_baseuri: http://limiter-processor:8000
+limiter_kafka_mps_processor_baseuri: http://limiter-processor-service:8000
 limiter_kafka_mps_reader_queue_size: 100000
 limiter_kafka_mps_writer_threads: 1000
 

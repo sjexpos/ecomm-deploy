@@ -10,13 +10,15 @@ spec:
         spec:
           containers:
             - name: hello
-              image: busybox:1.28
+              image: curlimages/curl:8.10.1
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/sh
                 - -c
-                - curl -X POST http://orders-service:8000/api
+                - curl -X GET http://orders-service:8000/api
           restartPolicy: OnFailure
+
+---
 
 apiVersion: batch/v1
 kind: CronJob
@@ -33,6 +35,9 @@ spec:
             - name: run-job-clean-transactions
               image: {{ .Values.orders_service_image }}
               imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: orders-service-config
               env:
                 - name: runjob
                   value: "CLEAN_TRANSACTIONS"

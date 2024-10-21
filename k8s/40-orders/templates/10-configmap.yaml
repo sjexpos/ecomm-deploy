@@ -35,4 +35,4 @@ data:
   {{ end }}
   PRODUCTS_SERVICE_BASEURI: '{{ .Values.orders_service_products_baseuri }}'
   USERS_SERVICE_BASEURI: '{{ .Values.orders_service_users_baseuri }}'
-  SCHEDULING_ENABLED: false
+  SCHEDULING_ENABLED: 'false'

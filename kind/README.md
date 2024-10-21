@@ -33,9 +33,11 @@ Go download and install packages and bin in a folder which is defined in `go env
 kind create cluster
 ```
 
+---
 
 kind create cluster --config=./kind-config.yaml
 
+---
 
 https://semaphoreci.com/blog/prometheus-grafana-kubernetes-helm
 
@@ -43,13 +45,19 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 helm install prometheus prometheus-community/prometheus
 
+// helm install prometheus oci://registry-1.docker.io/bitnamicharts/prometheus
+
+---
+
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 helm install grafana grafana/grafana
 
-// helm install prometheus oci://registry-1.docker.io/bitnamicharts/prometheus
+---
 
 helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka
+
+---
 
 helm install ecomm-monitoring ./../k8s/10-monitoring --namespace ecomm-kind --create-namespace -f ./../k8s/10-monitoring/kind.yaml
 helm install ecomm-users ./../k8s/20-users --namespace ecomm-kind --create-namespace -f ./../k8s/20-users/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
