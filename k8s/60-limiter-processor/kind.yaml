@@ -12,7 +12,7 @@ limiter_processor_service_kafka_security_protocol: SASL_PLAINTEXT
 limiter_processor_service_kafka_sasl_mechanism: PLAIN
 limiter_processor_service_kafka_extras: ''
 limiter_processor_service_tracing_url:
-limiter_processor_service_rate_limit: 100
+limiter_processor_service_rate_limit: 15
 
 # Special parameter to set by helm on command line
 # kafka_user:
