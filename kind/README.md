@@ -35,7 +35,19 @@ The king-config.yaml file creates a kind cluster with 3 worker nodes and 1 contr
 kind create cluster --config=./kind-config.yaml
 ```
 
-### 5. Install Prometheus
+### 5. Install ingress (nginx)
+```shell
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+```
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
+```
+
+### 6. Install Prometheus
 ```shell
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
@@ -43,19 +55,19 @@ helm install prometheus prometheus-community/prometheus
 ```
 // helm install prometheus oci://registry-1.docker.io/bitnamicharts/prometheus
 
-### 6. Install Grafana
+### 7. Install Grafana
 ```shell
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 helm install grafana grafana/grafana
 ```
 
-### 7. Install Kafka
+### 8. Install Kafka
 ```shell
 helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka
 ```
 
-### 7. Install Kafka UI
+### 9. Install Kafka UI
 ```shell
 helm repo add kafka-ui https://provectus.github.io/kafka-ui-charts
 helm repo update
@@ -89,7 +101,7 @@ kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.
 ```
 When you did all changes, you must press 'Save' button. This action will restart the kafka-ui pod, and when the pod comes back to live, it will be connected to kafka cluster.  
 
-### 8. Create topic (optional)
+### 10. Create topic (optional)
 
 It's a good idea to create topics before ecomm app starts, because you will be able to define partitions and replication factor for each.
 In case that topics are not created, app will create them with partition and replication factor of 1.
@@ -112,7 +124,7 @@ Create following topics:
   partitions: 10
   replication-factor: 2
 
-### 9. Install ecomm
+### 11. Install ecomm
 
 ```shell
 helm install ecomm-monitoring ./../k8s/10-monitoring --namespace ecomm-kind --create-namespace -f ./../k8s/10-monitoring/kind.yaml
