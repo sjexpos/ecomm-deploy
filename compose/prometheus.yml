@@ -1,0 +1,73 @@
+global:
+  scrape_interval: 3s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          application: 'Prometheus service'
+
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgresql-exporter:9187']
+        labels:
+          application: 'Postgres'
+
+  - job_name: 'monitoring'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:9090']
+        labels:
+          application: 'Monitoring service'
+
+  - job_name: 'users-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:6061']
+        labels:
+          application: 'Users service'
+
+  - job_name: 'products-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:6062']
+        labels:
+          application: 'Products service'
+
+  - job_name: 'orders-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:6063']
+        labels:
+          application: 'Orders service'
+
+  - job_name: 'limiter-kafka-mps'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:7070']
+        labels:
+          application: 'Limiter Kafka message proxy server'
+
+  - job_name: 'limiter-processor'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:7071']
+        labels:
+          application: 'Limiter processor'
+
+  - job_name: 'admin-bff'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:5051']
+        labels:
+          application: 'Admin backend for frontend'
+
+  - job_name: 'admin-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'Gateway for Admin backend for frontend'

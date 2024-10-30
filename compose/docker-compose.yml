@@ -5,10 +5,10 @@
 #
 # Exported ports
 #   - 172.16.208.10     6379       => redis
-#   - 172.16.208.11     6391/16391 => cluster redis - node 1
-#   - 172.16.208.12     6392/16392 => cluster redis - node 2
-#   - 172.16.208.13     639316393  => cluster redis - node 3
-#   - 172.16.208.14                => redis-cluster-configure
+#   - 172.16.208.11     6391/16391 => cluster redis - node 1 DISABLED
+#   - 172.16.208.12     6392/16392 => cluster redis - node 2 DISABLED
+#   - 172.16.208.13     6393/16393 => cluster redis - node 3 DISABLED
+#   - 172.16.208.14                => redis-cluster-configure DISABLED
 #   - 172.16.208.15     5540       => redisinsight
 #   - 172.16.208.20     5432       => postgres
 #   - 172.16.208.21                => flyway_users
@@ -23,9 +23,21 @@
 #   - 172.16.208.81     9092  => kafka
 #   - 172.16.208.82     9093  => kafka
 #   - 172.16.208.90     9100       => kafka-ui
-#   - 172.16.208.100   10001       => gateway-swaggger-ui
+#   - 172.16.208.100   10001       => gateway-swaggger-ui DISABLED
 #   - 172.16.208.110    9411       => zipkin
 #   - 172.16.208.120    4318/16686 => jaeger
+#   - 172.16.208.130    10000      => prometheus
+#   - 172.16.208.131    9187       => postgresql-exporter
+#   - 172.16.208.140    3000       => grafana
+#
+# monitoring        9090
+# user-service      6061
+# products-service  6062
+# orders-service    6063
+# limiter-kafka-mps 7070
+# limiter-processor 7071
+# admin-bff         5051
+# gateway           8080
 #
 # docker-compose up
 
@@ -42,7 +54,8 @@ services:
 
   redis:
     image: 'redis:7.4-alpine'
-    restart: "no"
+    container_name: redis
+    restart: unless-stopped
     ports:
       - '6379:6379'
     networks:
@@ -94,6 +107,8 @@ services:
 
   redisinsight:
     image: "redis/redisinsight:2.56"
+    container_name: redisinsight
+    restart: unless-stopped
     ports:
       - "5540:5540"
     networks:
@@ -113,7 +128,8 @@ services:
 
   postgres:
     image: 'postgres:14.4'
-    restart: "no"
+    container_name: postgres
+    restart: unless-stopped
     volumes:
       - './.data/postgres_data:/var/lib/postgresql/data'
       - './docker-compose-init-postgres.sh:/docker-entrypoint-initdb.d/init-db.sh'
@@ -124,6 +140,11 @@ services:
       - POSTGRES_PASSWORD=1234
     ports:
       - '5432:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ecomm -U pgadmin" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       backend:
         ipv4_address: 172.16.208.20
@@ -166,7 +187,8 @@ services:
 
   pgadmin4:
     image: 'thajeztah/pgadmin4'
-    restart: "no"
+    container_name: pgadmin4
+    restart: unless-stopped
     ports:
       - '5050:5050'
     depends_on: 
@@ -177,7 +199,8 @@ services:
 
   opensearch:
     image: opensearchproject/opensearch:2.16.0
-    restart: "no"
+    container_name: opensearch
+    restart: unless-stopped
     environment:
       - discovery.type=single-node
       - cluster.name=opensearch-cluster
@@ -204,7 +227,8 @@ services:
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.16.0
-    restart: "no"
+    container_name: opensearch-dashboards
+    restart: unless-stopped
     ports:
       - 5601:5601
     expose:
@@ -218,7 +242,8 @@ services:
 
   localstack:
     image: 'localstack/localstack-full:0.12.11'
-    restart: "no"
+    container_name: localstack
+    restart: unless-stopped
     ports:
       - "127.0.0.1:53:53"
       - "127.0.0.1:53:53/udp"
@@ -387,8 +412,9 @@ services:
         max-size: "1m"
 
   kafka-ui:
-    container_name: kafka-ui
     image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    restart: unless-stopped
     ports:
       - "9100:8080"
     depends_on:
@@ -414,22 +440,22 @@ services:
       options:
         max-size: "1m"
 
-  gateway-swaggger-ui:
-#    image: 'swaggerapi/swagger-ui:v3.49.0'
-    image: 'swaggerapi/swagger-ui:v5.17.14'
-    restart: "no"
-    ports:
-      - '10001:8080'
-    environment:
-      - SWAGGER_JSON_URL=http://localhost:8080/api
-    networks:
-      backend:
-        ipv4_address: 172.16.208.100
+#  gateway-swaggger-ui:
+#    image: 'swaggerapi/swagger-ui:v5.17.14'
+#    restart: "no"
+#    ports:
+#      - '10001:8080'
+#    environment:
+#      - SWAGGER_JSON_URL=http://localhost:8080/api
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.100
    
 
   zipkin:
     image: openzipkin/zipkin:3.4
-    restart: "no"
+    container_name: zipkin
+    restart: unless-stopped
     ports:
       - 9411:9411
     networks:
@@ -438,7 +464,8 @@ services:
       
   jaeger:
     image: jaegertracing/all-in-one:1.60.0
-    restart: "no"
+    container_name: jaeger
+    restart: unless-stopped
     ports:
       - 4318:4318
       - 16686:16686
@@ -448,3 +475,45 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
 
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - 10000:9090
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      backend:
+        ipv4_address: 172.16.208.130
+
+  postgresql-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: postgresql-exporter
+    restart: unless-stopped
+    ports:
+      - "9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgres://deployer:1234@postgres/ecomm_users?sslmode=disable"
+    depends_on:
+      prometheus:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      backend:
+        ipv4_address: 172.16.208.131
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana_datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    networks:
+      backend:
+        ipv4_address: 172.16.208.140

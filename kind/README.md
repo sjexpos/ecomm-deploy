@@ -29,13 +29,29 @@ export PATH=<GO_BIN_DIR>:$PATH
 ```
 Go download and install packages and bin in a folder which is defined in `go env GOPATH`. In linux by default is $HOME/go. So path will be: `export PATH=$HOME/go/bin:$PATH`
 
-### 4. Create cluster. 
+### 4. Increase max open files
+
+Because of some pods can show “too many open files”, it is needed to increase max open files.
+Resource limits are defined by fs.inotify.max_user_watches and fs.inotify.max_user_instances system variables. For example, in Ubuntu these default to 8192 and 128 respectively, which is not enough to create a cluster with many nodes.
+
+To increase these limits temporarily run the following commands on the host:
+```shell
+sudo sysctl fs.inotify.max_user_watches=524288
+sudo sysctl fs.inotify.max_user_instances=512
+```
+To make the changes persistent, edit the file /etc/sysctl.conf and add these lines:
+```text
+fs.inotify.max_user_watches = 524288
+fs.inotify.max_user_instances = 512
+```
+
+### 5. Create cluster. 
 The king-config.yaml file creates a kind cluster with 3 worker nodes and 1 control plane node.
 ```shell
 kind create cluster --config=./kind-config.yaml
 ```
 
-### 5. Install ingress (nginx)
+### 6. Install ingress (nginx)
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
@@ -47,20 +63,39 @@ kubectl wait --namespace ingress-nginx \
   --timeout=90s
 ```
 
-### 6. Install Prometheus
+### 7. Install Prometheus, Loki, and Grafana to monitor
+
+#### Install grafana and prometheus with kubernetes metrics, operator and alerts:
 ```shell
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
-helm install prometheus prometheus-community/prometheus
+helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
 ```
-// helm install prometheus oci://registry-1.docker.io/bitnamicharts/prometheus
+When all pods are running, you can create a port forwarding to the service `prometheus-grafana` on its port 3000.
+You will access to grafana (default user and password are: admin/prom-operator). This grafana is configured with a Prometheus datasource and several dashboards.
+You can also create a port forwarding to the service `prometheus-kube-prometheus-prometheus` on its port 9090 if you want to see prometheus dashboard (mainly to check targets).
 
-### 7. Install Grafana
+#### Deploy Loki and Promtail to your cluster
 ```shell
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
-helm install grafana grafana/grafana
+helm upgrade --install loki -n monitoring grafana/loki-stack --create-namespace
 ```
+
+#### Configure Loki with Grafana.
+  Go to Grafana dashboard and Home > Connections > Datasources then click on Add new data source.
+  Search for Loki and configure it like:
+```text
+HTTP: http://loki.monitoring.svc.cluster.local:3100
+Allowed cookies: <empty>
+Timeout: <empty>
+```
+**Note**: You only need to add the URL of Loki for this project. “loki” is the release name of helm chart and “monitoring” is the namespace which loki is installed.
+
+Then click on Save and Test.
+
+#### Load Loki dashboard.
+You can import a Loki dashboard to see services logs. A good option is https://grafana.com/grafana/dashboards/16966-container-log-dashboard/. You are able to import it using the ID 16966. 
 
 ### 8. Install Kafka
 ```shell
@@ -157,8 +192,8 @@ helm uninstall --namespace ecomm-kind ecomm-monitoring
 ```shell
 helm uninstall kafka-ui
 helm uninstall kafka
-helm uninstall grafana
-helm uninstall prometheus
+helm uninstall --namespace monitoring loki
+helm uninstall --namespace monitoring prometheus
 ```
 
 ### 3. Delete kind cluster
@@ -170,70 +205,7 @@ kind delete cluster
 
 ## Access to tools in cluster
 
-### 1. Prometheus
-
-The Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
-```text
-prometheus-server.default.svc.cluster.local
-```
-
-Get the Prometheus server URL by running these commands in the same shell:
-```shell
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9090
-```
-you will be able to reach prometheus on http://127.0.0.1:9090
-
-The Prometheus alertmanager can be accessed via port 9093 on the following DNS name from within your cluster:
-```text
-prometheus-alertmanager.default.svc.cluster.local
-```
-
-Get the Alertmanager URL by running these commands in the same shell:
-```shell
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9093
-```
-you will be able to reach prometheus alertmanager on http://127.0.0.1:9093
-
-The Prometheus PushGateway can be accessed via port 9091 on the following DNS name from within your cluster:
-```text
-prometheus-prometheus-pushgateway.default.svc.cluster.local
-```
-
-Get the PushGateway URL by running these commands in the same shell:
-```shell
-export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus-pushgateway,component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9091
-```
-you will be able to reach prometheus push gateway on http://127.0.0.1:9091
-
-**Note:** If you need more information about prometheus: https://semaphoreci.com/blog/prometheus-grafana-kubernetes-helm and https://prometheus.io/
-
-
-### 2. Grafana
-
-Get your 'admin' user password by running:
-```shell
-kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-```
-
-The Grafana server can be accessed via port 80 on the following DNS name from within your cluster:
-```text
-grafana.default.svc.cluster.local
-```
-
-Get the Grafana URL to visit by running these commands in the same shell:
-```shell
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=grafana" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 3000
-```
-you will be able to reach grafana on http://127.0.0.1:3000
-
-Login with the password from step 1 and the username: admin
-
-
-### 3. Kafka UI
+### 1. Kafka UI
 
 Get the application URL by running these commands:
 ```shell
@@ -243,7 +215,7 @@ kubectl --namespace default port-forward $POD_NAME 8080:8080
 you will be able to reach kafka ui on http://127.0.0.1:8080
 
 
-### 4. Kafka
+### 2. Kafka
 
 Kafka can be accessed by consumers via port 9092 on the following DNS name from within your cluster:
 ```text
@@ -291,170 +263,3 @@ WARNING: There are "resources" sections in the chart not set. Using "resourcesPr
   +info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 
 
-
-
-
-
-
-
-
-
-
-
-
-sergio@Alienware-x15-R2 ~/dev/projects/e-commerce/deploy/kind  (main)$ helm install prometheus prometheus-community/prometheus
-NAME: prometheus
-LAST DEPLOYED: Tue Oct 22 12:45:01 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-The Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
-prometheus-server.default.svc.cluster.local
-
-
-Get the Prometheus server URL by running these commands in the same shell:
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9090
-
-
-The Prometheus alertmanager can be accessed via port 9093 on the following DNS name from within your cluster:
-prometheus-alertmanager.default.svc.cluster.local
-
-
-Get the Alertmanager URL by running these commands in the same shell:
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9093
-#################################################################################
-######   WARNING: Pod Security Policy has been disabled by default since    #####
-######            it deprecated after k8s 1.25+. use                        #####
-######            (index .Values "prometheus-node-exporter" "rbac"          #####
-###### .          "pspEnabled") with (index .Values                         #####
-######            "prometheus-node-exporter" "rbac" "pspAnnotations")       #####
-######            in case you still need it.                                #####
-#################################################################################
-
-
-The Prometheus PushGateway can be accessed via port 9091 on the following DNS name from within your cluster:
-prometheus-prometheus-pushgateway.default.svc.cluster.local
-
-
-Get the PushGateway URL by running these commands in the same shell:
-export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus-pushgateway,component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9091
-
-For more information on running Prometheus, visit:
-https://prometheus.io/
-
-
-
-
-
-
-
-
-sergio@Alienware-x15-R2 ~/dev/projects/e-commerce/deploy/kind  (main)$ helm install grafana grafana/grafana
-
-NAME: grafana
-LAST DEPLOYED: Tue Oct 22 12:45:09 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-NOTES:
-1. Get your 'admin' user password by running:
-
-   kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-
-
-2. The Grafana server can be accessed via port 80 on the following DNS name from within your cluster:
-
-   grafana.default.svc.cluster.local
-
-   Get the Grafana URL to visit by running these commands in the same shell:
-   export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=grafana" -o jsonpath="{.items[0].metadata.name}")
-   kubectl --namespace default port-forward $POD_NAME 3000
-
-3. Login with the password from step 1 and the username: admin
-   #################################################################################
-######   WARNING: Persistence is disabled!!! You will lose your data when   #####
-######            the Grafana pod is terminated.                            #####
-#################################################################################
-
-
-
-sergio@Alienware-x15-R2 ~/dev/projects/e-commerce/deploy/kind  (main)$
-sergio@Alienware-x15-R2 ~/dev/projects/e-commerce/deploy/kind  (main)$ helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka
-Pulled: registry-1.docker.io/bitnamicharts/kafka:30.1.6
-Digest: sha256:652c63d81a1683a117d8b1a88b33d4d3ee3fc302960b886c0a56c01ae25e7d11
-NAME: kafka
-LAST DEPLOYED: Tue Oct 22 12:45:20 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-CHART NAME: kafka
-CHART VERSION: 30.1.6
-APP VERSION: 3.8.0
-
-** Please be patient while the chart is being deployed **
-
-Kafka can be accessed by consumers via port 9092 on the following DNS name from within your cluster:
-
-    kafka.default.svc.cluster.local
-
-Each Kafka broker can be accessed by producers via port 9092 on the following DNS name(s) from within your cluster:
-
-    kafka-controller-0.kafka-controller-headless.default.svc.cluster.local:9092
-    kafka-controller-1.kafka-controller-headless.default.svc.cluster.local:9092
-    kafka-controller-2.kafka-controller-headless.default.svc.cluster.local:9092
-
-The CLIENT listener for Kafka client connections from within your cluster have been configured with the following security settings:
-- SASL authentication
-
-To connect a client to your Kafka, you need to create the 'client.properties' configuration files with the content below:
-
-security.protocol=SASL_PLAINTEXT
-sasl.mechanism=SCRAM-SHA-256
-sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
-username="user1" \
-password="$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)";
-
-To create a pod that you can use as a Kafka client run the following commands:
-
-    kubectl run kafka-client --restart='Never' --image docker.io/bitnami/kafka:3.8.0-debian-12-r5 --namespace default --command -- sleep infinity
-    kubectl cp --namespace default /path/to/client.properties kafka-client:/tmp/client.properties
-    kubectl exec --tty -i kafka-client --namespace default -- bash
-
-    PRODUCER:
-        kafka-console-producer.sh \
-            --producer.config /tmp/client.properties \
-            --bootstrap-server kafka.default.svc.cluster.local:9092 \
-            --topic test
-
-    CONSUMER:
-        kafka-console-consumer.sh \
-            --consumer.config /tmp/client.properties \
-            --bootstrap-server kafka.default.svc.cluster.local:9092 \
-            --topic test \
-            --from-beginning
-
-WARNING: There are "resources" sections in the chart not set. Using "resourcesPreset" is not recommended for production. For production installations, please set the following values according to your workload needs:
-- controller.resources
-  +info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-
-
-sergio@Alienware-x15-R2 ~/dev/projects/e-commerce/deploy/kind  (main)$ helm install kafka-ui kafka-ui/kafka-ui
-
-NAME: kafka-ui
-LAST DEPLOYED: Wed Oct 23 00:48:01 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Get the application URL by running these commands:
-   export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=kafka-ui,app.kubernetes.io/instance=kafka-ui" -o jsonpath="{.items[0].metadata.name}")
-   echo "Visit http://127.0.0.1:8080 to use your application"
-   kubectl --namespace default port-forward $POD_NAME 8080:8080

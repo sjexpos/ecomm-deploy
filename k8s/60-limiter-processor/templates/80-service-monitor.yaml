@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: limiter-processor-service-monitor
+  labels:
+    app: limiter-processor-service-monitor
+    release: prometheus-operator
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: limiter-processor-service
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: http-traffic
+      path: "/actuator/prometheus"
+      interval: 5s
+      scrapeTimeout: 5s

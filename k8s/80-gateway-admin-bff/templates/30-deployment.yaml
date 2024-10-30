@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: gateway-admin-bff
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       serviceAccountName: gateway-admin-bff-account
       containers:

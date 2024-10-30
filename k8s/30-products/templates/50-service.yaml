@@ -8,7 +8,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-    - name: http
+    - name: http-traffic
       port: 8000
       protocol: TCP
       targetPort: 7000
