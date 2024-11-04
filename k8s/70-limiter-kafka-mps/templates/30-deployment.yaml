@@ -27,6 +27,13 @@ spec:
             - containerPort: 7000
               name: http-port
               protocol: TCP
+          resources:
+            requests:
+              cpu: 1000m
+              memory: "2048Mi"
+            limits:
+              cpu: 2000m
+              memory: "2048Mi"
           readinessProbe:
             httpGet:
               path: "/actuator/health/readiness"

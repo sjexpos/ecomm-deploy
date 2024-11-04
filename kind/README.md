@@ -45,13 +45,57 @@ fs.inotify.max_user_watches = 524288
 fs.inotify.max_user_instances = 512
 ```
 
-### 5. Create cluster. 
+### 5. Start up external services
+
+Some pods need external services like postgres, redis and elasticsearch, it is possible to run them using docker compose on folder `../compose`.
+On this folder you must run:
+```shell
+docker compose --profile kind up
+```
+
+### 6. Create cluster. 
 The king-config.yaml file creates a kind cluster with 3 worker nodes and 1 control plane node.
 ```shell
 kind create cluster --config=./kind-config.yaml
 ```
 
-### 6. Install ingress (nginx)
+### 7. Install metrics server
+
+They are needed to Horizontal Auto Scaling
+
+```shell
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo update
+helm install metrics-server -n monitoring metrics-server/metrics-server --create-namespace -f ./metrics-server.yaml
+```
+**Note**: the file metrics-server.yaml was download from https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml and it was added a new argument `--kubelet-insecure-tls=true`
+
+You can check if metrics servers are running:
+```shell
+kubectl get apiservices | grep metrics
+```
+You will see:
+```text
+NAME                         SERVICE                      AVAILABLE                       AGE
+v1beta1.metrics.k8s.io       kube-system/metrics-server   True                            42m
+```
+
+To get the stats about your resources, you just need to run these commands. To monitor the resources of your nodes:
+```shell
+kubectl top nodes
+```
+
+To monitor the resource of your pods:
+```shell
+kubectl top pods
+```
+
+Then verify the result state (after a minute or so):
+```shell
+kubectl get hpa -n ecomm-kind --watch
+```
+
+### 8. Install ingress (nginx)
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
@@ -63,7 +107,7 @@ kubectl wait --namespace ingress-nginx \
   --timeout=90s
 ```
 
-### 7. Install Prometheus, Loki, and Grafana to monitor
+### 9. Install Prometheus, Loki, and Grafana to monitor
 
 #### Install grafana and prometheus with kubernetes metrics, operator and alerts:
 ```shell
@@ -79,7 +123,7 @@ You can also create a port forwarding to the service `prometheus-kube-prometheus
 ```shell
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
-helm upgrade --install loki -n monitoring grafana/loki-stack --create-namespace
+helm install loki -n monitoring grafana/loki-stack --create-namespace
 ```
 
 #### Configure Loki with Grafana.
@@ -97,53 +141,31 @@ Then click on Save and Test.
 #### Load Loki dashboard.
 You can import a Loki dashboard to see services logs. A good option is https://grafana.com/grafana/dashboards/16966-container-log-dashboard/. You are able to import it using the ID 16966. 
 
-### 8. Install Kafka
+### 10. Install Kafka
 ```shell
-helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka
-```
-
-### 9. Install Kafka UI
-```shell
-helm repo add kafka-ui https://provectus.github.io/kafka-ui-charts
-helm repo update
-helm install kafka-ui kafka-ui/kafka-ui
-```
-**Note:** more information in https://docs.kafka-ui.provectus.io/configuration/helm-charts/quick-start
-
-It's needed to update kafka-ui chart configuration to connect it to kafka. 
-So, From Lens you must go to kind-kind > Helm > Releases, click on kafka-ui line and a popu-up will appear.
-In this popup, there is a text area named 'Value' which has a json inside. You update the json adding the following lines:
-```yaml
-yamlApplicationConfig:
-  auth:
-    type: disabled
-  kafka:
-    clusters:
-    - bootstrapServers: kafka.default.svc.cluster.local:9092
-      name: k8s-kafka
-      properties:
-        sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="user1" password="xxxxx";
-        sasl.mechanism: PLAIN
-        security.protocol: SASL_PLAINTEXT
-  management:
-    health:
-      ldap:
-        enabled: false
+helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka -n infra --create-namespace
 ```
 Kafka password can be gotten if you run the following command
 ```shell
-kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1
+kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1
 ```
-When you did all changes, you must press 'Save' button. This action will restart the kafka-ui pod, and when the pod comes back to live, it will be connected to kafka cluster.  
 
-### 10. Create topic (optional)
+### 11. Install Kafka UI
+```shell
+helm repo add kafka-ui https://provectus.github.io/kafka-ui-charts
+helm repo update
+KAFKA_PASSWORD=`kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1` | sed 's/PASSWORD/'$KAFKA_PASSWORD'/g' ./kafka-ui.yaml | helm install kafka-ui kafka-ui/kafka-ui -n infra --create-namespace -f - 
+```
+**Note:** more information in https://docs.kafka-ui.provectus.io/configuration/helm-charts/quick-start
+
+### 12. Create topic (optional)
 
 It's a good idea to create topics before ecomm app starts, because you will be able to define partitions and replication factor for each.
 In case that topics are not created, app will create them with partition and replication factor of 1.
 If you create a port forwarding from Lens or using this commands:
 ```shell
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=kafka-ui,app.kubernetes.io/instance=kafka-ui" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 8080:8080
+export POD_NAME=$(kubectl get pods --namespace infra -l "app.kubernetes.io/name=kafka-ui,app.kubernetes.io/instance=kafka-ui" -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace infra port-forward $POD_NAME 8080:8080
 ```
 you will be able to reach kafka-ui on http://127.0.0.1:8080
 
@@ -159,19 +181,33 @@ Create following topics:
   partitions: 10
   replication-factor: 2
 
-### 11. Install ecomm
+### 13. Install ecomm
 
 ```shell
 helm install ecomm-monitoring ./../k8s/10-monitoring --namespace ecomm-kind --create-namespace -f ./../k8s/10-monitoring/kind.yaml
-helm install ecomm-users ./../k8s/20-users --namespace ecomm-kind --create-namespace -f ./../k8s/20-users/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
+helm install ecomm-users ./../k8s/20-users --namespace ecomm-kind --create-namespace -f ./../k8s/20-users/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 helm install ecomm-products ./../k8s/30-products --namespace ecomm-kind --create-namespace -f ./../k8s/30-products/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
 helm install ecomm-orders ./../k8s/40-orders --namespace ecomm-kind --create-namespace -f ./../k8s/40-orders/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
 helm install ecomm-admin-bff ./../k8s/50-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/50-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
-helm install ecomm-limiter-processor ./../k8s/60-limiter-processor --namespace ecomm-kind --create-namespace -f ./../k8s/60-limiter-processor/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
-helm install ecomm-limiter-kafka-mps ./../k8s/70-limiter-kafka-mps --namespace ecomm-kind --create-namespace -f ./../k8s/70-limiter-kafka-mps/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
-helm install ecomm-gateway-admin-bff ./../k8s/80-gateway-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/80-gateway-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
+helm install ecomm-limiter-processor ./../k8s/60-limiter-processor --namespace ecomm-kind --create-namespace -f ./../k8s/60-limiter-processor/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
+helm install ecomm-limiter-kafka-mps ./../k8s/70-limiter-kafka-mps --namespace ecomm-kind --create-namespace -f ./../k8s/70-limiter-kafka-mps/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
+helm install ecomm-gateway-admin-bff ./../k8s/80-gateway-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/80-gateway-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 ```
 
+### 14. Useful commands 
+
+Monitoring HPA
+```shell
+kubectl -n ecomm-kind get hpa --watch
+```
+Monitoring deployment events
+```shell
+kubectl -n ecomm-kind describe deploy users-service
+```
+Increase the load
+```shell
+kubectl run -n ecomm-kind -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://users-service:8000/api; done"
+```
 ## Uninstallation
 
 ### 1. Uninstall ecomm
@@ -190,10 +226,12 @@ helm uninstall --namespace ecomm-kind ecomm-monitoring
 ### 2. Uninstall all tools
 
 ```shell
-helm uninstall kafka-ui
-helm uninstall kafka
+helm uninstall --namespace infra kafka-ui
+helm uninstall --namespace infra kafka
 helm uninstall --namespace monitoring loki
 helm uninstall --namespace monitoring prometheus
+kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+helm uninstall --namespace monitoring metrics-server 
 ```
 
 ### 3. Delete kind cluster
@@ -209,8 +247,8 @@ kind delete cluster
 
 Get the application URL by running these commands:
 ```shell
-export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=kafka-ui,app.kubernetes.io/instance=kafka-ui" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 8080:8080
+export POD_NAME=$(kubectl get pods --namespace infra -l "app.kubernetes.io/name=kafka-ui,app.kubernetes.io/instance=kafka-ui" -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace infra port-forward $POD_NAME 8080:8080
 ```
 you will be able to reach kafka ui on http://127.0.0.1:8080
 
@@ -219,13 +257,13 @@ you will be able to reach kafka ui on http://127.0.0.1:8080
 
 Kafka can be accessed by consumers via port 9092 on the following DNS name from within your cluster:
 ```text
-kafka.default.svc.cluster.local
+kafka.infra.svc.cluster.local
 ```
 Each Kafka broker can be accessed by producers via port 9092 on the following DNS name(s) from within your cluster:
 ```text
-kafka-controller-0.kafka-controller-headless.default.svc.cluster.local:9092
-kafka-controller-1.kafka-controller-headless.default.svc.cluster.local:9092
-kafka-controller-2.kafka-controller-headless.default.svc.cluster.local:9092
+kafka-controller-0.kafka-controller-headless.infra.svc.cluster.local:9092
+kafka-controller-1.kafka-controller-headless.infra.svc.cluster.local:9092
+kafka-controller-2.kafka-controller-headless.infra.svc.cluster.local:9092
 ```
 
 The CLIENT listener for Kafka client connections from within your cluster have been configured with the following security settings:
@@ -237,24 +275,24 @@ security.protocol=SASL_PLAINTEXT
 sasl.mechanism=SCRAM-SHA-256
 sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
 username="user1" \
-password="$(kubectl get secret kafka-user-passwords --namespace default -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)";
+password="$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)";
 
 To create a pod that you can use as a Kafka client run the following commands:
 
-    kubectl run kafka-client --restart='Never' --image docker.io/bitnami/kafka:3.8.0-debian-12-r5 --namespace default --command -- sleep infinity
-    kubectl cp --namespace default /path/to/client.properties kafka-client:/tmp/client.properties
-    kubectl exec --tty -i kafka-client --namespace default -- bash
+    kubectl run kafka-client --restart='Never' --image docker.io/bitnami/kafka:3.8.0-debian-12-r5 --namespace infra --command -- sleep infinity
+    kubectl cp --namespace infra /path/to/client.properties kafka-client:/tmp/client.properties
+    kubectl exec --tty -i kafka-client --namespace infra -- bash
 
     PRODUCER:
         kafka-console-producer.sh \
             --producer.config /tmp/client.properties \
-            --bootstrap-server kafka.default.svc.cluster.local:9092 \
+            --bootstrap-server kafka.infra.svc.cluster.local:9092 \
             --topic test
 
     CONSUMER:
         kafka-console-consumer.sh \
             --consumer.config /tmp/client.properties \
-            --bootstrap-server kafka.default.svc.cluster.local:9092 \
+            --bootstrap-server kafka.infra.svc.cluster.local:9092 \
             --topic test \
             --from-beginning
 

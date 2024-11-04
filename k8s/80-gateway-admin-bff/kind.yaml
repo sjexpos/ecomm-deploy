@@ -3,11 +3,11 @@ gateway_pod_role_oidc_access:
 
 gateway_image: sjexposecomm/gateway:latest
 gateway_java_xms: 256m
-gateway_java_xmx: 1g
+gateway_java_xmx: 512m
 gateway_monitoring_url: http://monitoring-service:9090
 gateway_redis_host:
 gateway_redis_port: 6379
-gateway_kafka_servers: kafka.default.svc.cluster.local:9092
+gateway_kafka_servers: kafka.infra.svc.cluster.local:9092
 gateway_kafka_security_protocol: SASL_PLAINTEXT
 gateway_kafka_sasl_mechanism: PLAIN
 gateway_kafka_extras: ''

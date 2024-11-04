@@ -14,7 +14,7 @@ users_service_redis_host:
 users_service_redis_port: 6379
 users_service_assets_bucket: ecomm-assets-dev
 users_service_opensearch:
-users_service_kafka_servers: kafka.default.svc.cluster.local:9092
+users_service_kafka_servers: kafka.infra.svc.cluster.local:9092
 users_service_kafka_security_protocol: SASL_PLAINTEXT
 users_service_kafka_sasl_mechanism: PLAIN
 users_service_kafka_extras: ''

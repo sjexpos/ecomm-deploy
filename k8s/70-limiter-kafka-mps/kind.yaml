@@ -5,7 +5,7 @@ limiter_kafka_mps_image: sjexposecomm/limiter-kafka-mps:latest
 limiter_kafka_mps_java_xms: 256m
 limiter_kafka_mps_java_xmx: 1g
 limiter_kafka_mps_monitoring_url: http://monitoring-service:9090
-limiter_kafka_mps_kafka_servers: kafka.default.svc.cluster.local:9092
+limiter_kafka_mps_kafka_servers: kafka.infra.svc.cluster.local:9092
 limiter_kafka_mps_kafka_security_protocol: SASL_PLAINTEXT
 limiter_kafka_mps_kafka_sasl_mechanism: PLAIN
 limiter_kafka_mps_kafka_extras: ''

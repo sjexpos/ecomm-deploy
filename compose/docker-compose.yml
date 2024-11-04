@@ -56,6 +56,7 @@ services:
     image: 'redis:7.4-alpine'
     container_name: redis
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     ports:
       - '6379:6379'
     networks:
@@ -109,6 +110,7 @@ services:
     image: "redis/redisinsight:2.56"
     container_name: redisinsight
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     ports:
       - "5540:5540"
     networks:
@@ -130,6 +132,7 @@ services:
     image: 'postgres:14.4'
     container_name: postgres
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     volumes:
       - './.data/postgres_data:/var/lib/postgresql/data'
       - './docker-compose-init-postgres.sh:/docker-entrypoint-initdb.d/init-db.sh'
@@ -154,6 +157,7 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.21
+    profiles: ["", "local", "kind"]
     volumes:
       - ${ECOMM_USERS_MODEL_SQL:-./../../users-service/db-scripts/src/main/resources}:/flyway/sql
       - ./:/mnt
@@ -166,6 +170,7 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.22
+    profiles: ["", "local", "kind"]
     volumes:
       - ${ECOMM_PRODUCTS_MODEL_SQL:-./../../products-service/db-scripts/src/main/resources}:/flyway/sql
       - ./:/mnt
@@ -178,6 +183,7 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.23
+    profiles: ["", "local", "kind"]
     volumes:
       - ${ECOMM_ORDERS_MODEL_SQL:-./../../orders-service/db-scripts/src/main/resources}:/flyway/sql
       - ./:/mnt
@@ -189,6 +195,7 @@ services:
     image: 'thajeztah/pgadmin4'
     container_name: pgadmin4
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     ports:
       - '5050:5050'
     depends_on: 
@@ -201,6 +208,7 @@ services:
     image: opensearchproject/opensearch:2.16.0
     container_name: opensearch
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     environment:
       - discovery.type=single-node
       - cluster.name=opensearch-cluster
@@ -229,6 +237,7 @@ services:
     image: opensearchproject/opensearch-dashboards:2.16.0
     container_name: opensearch-dashboards
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     ports:
       - 5601:5601
     expose:
@@ -244,6 +253,7 @@ services:
     image: 'localstack/localstack-full:0.12.11'
     container_name: localstack
     restart: unless-stopped
+    profiles: ["", "local", "kind"]
     ports:
       - "127.0.0.1:53:53"
       - "127.0.0.1:53:53/udp"
@@ -277,6 +287,7 @@ services:
     image: confluentinc/cp-zookeeper:7.7.0
     container_name: zookeeper
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - '32181:32181'
       - '2888:2888'
@@ -322,6 +333,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     container_name: kafka-broker-1
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - '9091:9091'
     depends_on:
@@ -353,6 +365,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     container_name: kafka-broker-2
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - '9092:9092'
     depends_on:
@@ -384,6 +397,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     container_name: kafka-broker-3
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - '9093:9093'
     depends_on:
@@ -415,6 +429,7 @@ services:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: kafka-ui
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - "9100:8080"
     depends_on:
@@ -456,6 +471,7 @@ services:
     image: openzipkin/zipkin:3.4
     container_name: zipkin
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - 9411:9411
     networks:
@@ -466,6 +482,7 @@ services:
     image: jaegertracing/all-in-one:1.60.0
     container_name: jaeger
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - 4318:4318
       - 16686:16686
@@ -479,6 +496,7 @@ services:
     image: prom/prometheus:v2.55.0
     container_name: prometheus
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - 10000:9090
     extra_hosts:
@@ -493,6 +511,7 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: postgresql-exporter
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - "9187:9187"
     environment:
@@ -510,6 +529,7 @@ services:
     image: grafana/grafana:11.3.0
     container_name: grafana
     restart: unless-stopped
+    profiles: ["", "local"]
     ports:
       - "3000:3000"
     volumes:
