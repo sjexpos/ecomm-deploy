@@ -14,9 +14,7 @@ products_service_redis_host:
 products_service_redis_port: 6379
 products_service_assets_bucket: ecomm-assets-dev
 products_service_opensearch:
-products_service_tracing_url:
-
-products_service_ingress_host: products.kind.ecomm.io
+products_service_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
 
 # Special parameter to set by helm on command line
 # kind_gateway_id:

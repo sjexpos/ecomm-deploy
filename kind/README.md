@@ -141,7 +141,15 @@ Then click on Save and Test.
 #### Load Loki dashboard.
 You can import a Loki dashboard to see services logs. A good option is https://grafana.com/grafana/dashboards/16966-container-log-dashboard/. You are able to import it using the ID 16966. 
 
-### 10. Install Kafka
+### 10. Install Jaeger
+
+```shell
+helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
+helm repo update
+helm install jaeger -n monitoring jaegertracing/jaeger --create-namespace -f ./jaeger-values.yaml
+```
+
+### 11. Install Kafka
 ```shell
 helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka -n infra --create-namespace
 ```
@@ -150,15 +158,15 @@ Kafka password can be gotten if you run the following command
 kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1
 ```
 
-### 11. Install Kafka UI
+### 12. Install Kafka UI
 ```shell
 helm repo add kafka-ui https://provectus.github.io/kafka-ui-charts
 helm repo update
-KAFKA_PASSWORD=`kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1` | sed 's/PASSWORD/'$KAFKA_PASSWORD'/g' ./kafka-ui.yaml | helm install kafka-ui kafka-ui/kafka-ui -n infra --create-namespace -f - 
+KAFKA_PASSWORD=`kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1` bash -c 'sed "s/PASSWORD/"$KAFKA_PASSWORD"/g" ./kafka-ui.yaml | helm install kafka-ui kafka-ui/kafka-ui -n infra --create-namespace -f - '
 ```
 **Note:** more information in https://docs.kafka-ui.provectus.io/configuration/helm-charts/quick-start
 
-### 12. Create topic (optional)
+### 13. Create topic (optional)
 
 It's a good idea to create topics before ecomm app starts, because you will be able to define partitions and replication factor for each.
 In case that topics are not created, app will create them with partition and replication factor of 1.
@@ -181,7 +189,7 @@ Create following topics:
   partitions: 10
   replication-factor: 2
 
-### 13. Install ecomm
+### 14. Install ecomm
 
 ```shell
 helm install ecomm-monitoring ./../k8s/10-monitoring --namespace ecomm-kind --create-namespace -f ./../k8s/10-monitoring/kind.yaml
@@ -194,7 +202,7 @@ helm install ecomm-limiter-kafka-mps ./../k8s/70-limiter-kafka-mps --namespace e
 helm install ecomm-gateway-admin-bff ./../k8s/80-gateway-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/80-gateway-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 ```
 
-### 14. Useful commands 
+### 15. Useful commands 
 
 Monitoring HPA
 ```shell
@@ -228,6 +236,7 @@ helm uninstall --namespace ecomm-kind ecomm-monitoring
 ```shell
 helm uninstall --namespace infra kafka-ui
 helm uninstall --namespace infra kafka
+helm uninstall --namespace monitoring jaeger
 helm uninstall --namespace monitoring loki
 helm uninstall --namespace monitoring prometheus
 kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml

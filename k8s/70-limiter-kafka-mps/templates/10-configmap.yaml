@@ -15,11 +15,7 @@ data:
   KAFKA_SASL_JAAS_CONFIG: '{{ print "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" .Values.kafka_user "\" password=\"" .Values.kafka_password "\";" }}'
   {{ end }}
   KAFKA_EXTRAS: '{{ .Values.limiter_processor_service_kafka_extras }}'
-  {{ if not (empty .Values.kind_gateway_id) }}
-  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
-  {{ else }}
   TRACING_URL: '{{ .Values.limiter_kafka_mps_tracing_url }}'
-  {{ end }}
   PROCESSOR_SERVICE_BASEURI: '{{ .Values.limiter_kafka_mps_processor_baseuri }}'
   READER_QUEUE_SIZE: '{{ .Values.limiter_kafka_mps_reader_queue_size }}'
   WRITER_THREADS: '{{ .Values.limiter_kafka_mps_writer_threads }}'

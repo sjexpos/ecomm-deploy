@@ -11,7 +11,7 @@ gateway_kafka_servers: kafka.infra.svc.cluster.local:9092
 gateway_kafka_security_protocol: SASL_PLAINTEXT
 gateway_kafka_sasl_mechanism: PLAIN
 gateway_kafka_extras: ''
-gateway_tracing_url:
+gateway_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
 gateway_jwt_secret: Yn2kjibddFAWtnPJ2AFlL8WXmohJMCvigQggaEypa5E=
 gateway_forward_api_name: admin
 gateway_forward_url: http://admin-bff:8000

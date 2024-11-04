@@ -18,9 +18,7 @@ users_service_kafka_servers: kafka.infra.svc.cluster.local:9092
 users_service_kafka_security_protocol: SASL_PLAINTEXT
 users_service_kafka_sasl_mechanism: PLAIN
 users_service_kafka_extras: ''
-users_service_tracing_url:
-
-users_service_ingress_host: users.kind.ecomm.io
+users_service_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
 
 # Special parameter to set by helm on command line
 # kafka_user:

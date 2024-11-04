@@ -7,12 +7,10 @@ admin_bff_java_xmx: 512m
 admin_bff_monitoring_url: http://monitoring-service:9090
 admin_bff_redis_host:
 admin_bff_redis_port: 6379
-admin_bff_tracing_url:
+admin_bff_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
 admin_bff_products_baseuri: http://products-service:8000
 admin_bff_users_baseuri: http://users-service:8000
 admin_bff_orders_baseuri: http://orders-service:8000
-
-admin_bff_ingress_host: admin-bff.kind.ecomm.io
 
 # Special parameter to set by helm on command line
 # kind_gateway_id:

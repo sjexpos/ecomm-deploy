@@ -21,11 +21,7 @@ data:
   KAFKA_SASL_JAAS_CONFIG: '{{ print "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" .Values.kafka_user "\" password=\"" .Values.kafka_password "\";" }}'
   {{ end }}
   KAFKA_EXTRAS: '{{ .Values.gateway_kafka_extras }}'
-  {{ if not (empty .Values.kind_gateway_id) }}
-  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
-  {{ else }}
   TRACING_URL: '{{ .Values.gateway_tracing_url }}'
-  {{ end }}
   JWT_SECRET: '{{ .Values.gateway_jwt_secret }}'
   FORWARD_API_NAME: '{{ .Values.gateway_forward_api_name }}'
   FORWARD_URL: '{{ .Values.gateway_forward_url }}'

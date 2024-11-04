@@ -13,11 +13,9 @@ orders_service_database_password: "1234"
 orders_service_redis_host:
 orders_service_redis_port: 6379
 orders_service_opensearch:
-orders_service_tracing_url:
+orders_service_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
 orders_service_products_baseuri: http://products-service:8000
 orders_service_users_baseuri: http://users-service:8000
-
-orders_service_ingress_host: orders.kind.ecomm.io
 
 # Special parameter to set by helm on command line
 # kind_gateway_id:

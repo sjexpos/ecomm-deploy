@@ -28,11 +28,7 @@ data:
   {{ else}}
   OPENSEARCH_CONN: '{{ .Values.orders_service_opensearch }}'
   {{ end }}
-  {{ if not (empty .Values.kind_gateway_id) }}
-  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
-  {{ else }}
   TRACING_URL: '{{ .Values.orders_service_tracing_url }}'
-  {{ end }}
   PRODUCTS_SERVICE_BASEURI: '{{ .Values.orders_service_products_baseuri }}'
   USERS_SERVICE_BASEURI: '{{ .Values.orders_service_users_baseuri }}'
   SCHEDULING_ENABLED: 'false'

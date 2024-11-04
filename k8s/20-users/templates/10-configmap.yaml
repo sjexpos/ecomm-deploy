@@ -41,8 +41,4 @@ data:
   AWS_ENDPOINT: 'http://localhost:4566'
   AWS_DEFAULT_REGION: 'us-east-1'
   AWS_REGION: 'us-east-1'
-  {{ if not (empty .Values.kind_gateway_id) }}
-  TRACING_URL: 'http://{{ .Values.kind_gateway_id }}:4318/v1/traces'
-  {{ else }}
   TRACING_URL: '{{ .Values.users_service_tracing_url }}'
-  {{ end }}
