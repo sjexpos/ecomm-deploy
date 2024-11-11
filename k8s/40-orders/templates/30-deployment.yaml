@@ -13,10 +13,6 @@ spec:
     metadata:
       labels:
         app: orders-service
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
-        prometheus.io/path: "/actuator/prometheus"
     spec:
       serviceAccountName: orders-service-account
       containers:

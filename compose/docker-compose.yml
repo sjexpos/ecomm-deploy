@@ -24,7 +24,7 @@
 #   - 172.16.208.82     9093  => kafka
 #   - 172.16.208.90     9100       => kafka-ui
 #   - 172.16.208.100   10001       => gateway-swaggger-ui DISABLED
-#   - 172.16.208.110    9411       => zipkin
+#   - 172.16.208.110    9411       => zipkin DISABLED
 #   - 172.16.208.120    4318/16686 => jaeger
 #   - 172.16.208.130    10000      => prometheus
 #   - 172.16.208.131    9187       => postgresql-exporter
@@ -467,16 +467,16 @@ services:
 #        ipv4_address: 172.16.208.100
    
 
-  zipkin:
-    image: openzipkin/zipkin:3.4
-    container_name: zipkin
-    restart: unless-stopped
-    profiles: ["", "local"]
-    ports:
-      - 9411:9411
-    networks:
-      backend:
-        ipv4_address: 172.16.208.110
+#  zipkin:
+#    image: openzipkin/zipkin:3.4
+#    container_name: zipkin
+#    restart: unless-stopped
+#    profiles: ["", "local"]
+#    ports:
+#      - 9411:9411
+#    networks:
+#      backend:
+#        ipv4_address: 172.16.208.110
       
   jaeger:
     image: jaegertracing/all-in-one:1.60.0
@@ -484,6 +484,7 @@ services:
     restart: unless-stopped
     profiles: ["", "local"]
     ports:
+      - 4317:4317
       - 4318:4318
       - 16686:16686
     networks:
@@ -506,6 +507,13 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.130
+    command:
+      - "--enable-feature=otlp-write-receiver"
+      - "--log.level=debug"
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
 
   postgresql-exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0

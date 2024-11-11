@@ -70,6 +70,11 @@ helm install metrics-server -n monitoring metrics-server/metrics-server --create
 ```
 **Note**: the file metrics-server.yaml was download from https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml and it was added a new argument `--kubelet-insecure-tls=true`
 
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=metrics-server --timeout=90s
+```
+
 You can check if metrics servers are running:
 ```shell
 kubectl get apiservices | grep metrics
@@ -101,45 +106,73 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 ```
 Wait until is ready to process requests running:
 ```shell
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=90s
+kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=90s
 ```
 
 ### 9. Install Prometheus, Loki, and Grafana to monitor
 
-#### Install grafana and prometheus with kubernetes metrics, operator and alerts:
+#### Install prometheus with kubernetes metrics, operator and alerts:
 ```shell
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
-helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+helm install prometheus bitnami/kube-prometheus -n monitoring --create-namespace
 ```
-When all pods are running, you can create a port forwarding to the service `prometheus-grafana` on its port 3000.
-You will access to grafana (default user and password are: admin/prom-operator). This grafana is configured with a Prometheus datasource and several dashboards.
-You can also create a port forwarding to the service `prometheus-kube-prometheus-prometheus` on its port 9090 if you want to see prometheus dashboard (mainly to check targets).
-
-#### Deploy Loki and Promtail to your cluster
+Wait until is ready to process requests running:
 ```shell
-helm repo add grafana https://grafana.github.io/helm-charts
-helm repo update
-helm install loki -n monitoring grafana/loki-stack --create-namespace
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=prometheus --timeout=90s
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/component=prometheus --timeout=90s
+```
+
+You can also create a port forwarding to the service `prometheus-kube-prometheus-prometheus` on its port 9090 if you want to see prometheus dashboard (mainly to check targets).
+#### Install grafana
+```shell
+helm install grafana bitnami/grafana -n monitoring --create-namespace
+```
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/component=grafana --timeout=90s
+```
+When all pods are running, you can create a port forwarding to the service `grafana` on its port 3000.
+Credentials:
+   echo "User: admin"
+   echo "Password: $(kubectl get secret grafana-admin --namespace monitoring -o jsonpath="{.data.GF_SECURITY_ADMIN_PASSWORD}" | base64 -d)"
+
+You must sign-in grafana using credentials above and create a data source. You pick-up `prometheus` and use `http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090` as connection url. Click Save & test.
+
+#### Install loki
+```shell
+helm install loki bitnami/grafana-loki -n monitoring --create-namespace
+```
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=loki --timeout=90s
 ```
 
 #### Configure Loki with Grafana.
-  Go to Grafana dashboard and Home > Connections > Datasources then click on Add new data source.
-  Search for Loki and configure it like:
+Go to Grafana dashboard and Home > Connections > Datasources then click on Add new data source.
+Search for Loki and configure it like:
 ```text
-HTTP: http://loki.monitoring.svc.cluster.local:3100
+HTTP: http://loki-grafana-loki-query-frontend.monitoring.svc.cluster.local:3100
 Allowed cookies: <empty>
 Timeout: <empty>
 ```
-**Note**: You only need to add the URL of Loki for this project. “loki” is the release name of helm chart and “monitoring” is the namespace which loki is installed.
+**Note**: You only need to add the URL of Loki for this project. “monitoring” is the namespace which loki is installed.
 
 Then click on Save and Test.
 
 #### Load Loki dashboard.
-You can import a Loki dashboard to see services logs. A good option is https://grafana.com/grafana/dashboards/16966-container-log-dashboard/. You are able to import it using the ID 16966. 
+You can import a Loki dashboard to see services logs. A good option is https://grafana.com/grafana/dashboards/16966-container-log-dashboard/. You are able to import it using the ID 16966.
+
+#### Load interesting dashboards
+ID: 19004 - URL: https://grafana.com/grafana/dashboards/19004-spring-boot-statistics/
+ID: 15661 - URL: https://grafana.com/grafana/dashboards/15661-1-k8s-for-prometheus-dashboard-20211010/
+ID: 15758 - URL: https://grafana.com/grafana/dashboards/15758-kubernetes-views-namespaces/
+ID: 15760 - URL: https://grafana.com/grafana/dashboards/15760-kubernetes-views-pods/
+ID: 15757 - URL: https://grafana.com/grafana/dashboards/15757-kubernetes-views-global/
+ID: 15759 - URL: https://grafana.com/grafana/dashboards/15759-kubernetes-views-nodes/
+ID: 15761 - URL: https://grafana.com/grafana/dashboards/15761-kubernetes-system-api-server/
+ID: 15762 - URL: https://grafana.com/grafana/dashboards/15762-kubernetes-system-coredns/
+ID: 19105 - URL: https://grafana.com/grafana/dashboards/19105-prometheus/
 
 ### 10. Install Jaeger
 
@@ -148,11 +181,20 @@ helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
 helm repo update
 helm install jaeger -n monitoring jaegertracing/jaeger --create-namespace -f ./jaeger-values.yaml
 ```
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=jaeger --timeout=90s
+```
 
 ### 11. Install Kafka
 ```shell
 helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka -n infra --create-namespace
 ```
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace infra --for=condition=ready pod --selector=app.kubernetes.io/instance=kafka --timeout=90s
+```
+
 Kafka password can be gotten if you run the following command
 ```shell
 kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1
@@ -165,6 +207,10 @@ helm repo update
 KAFKA_PASSWORD=`kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1` bash -c 'sed "s/PASSWORD/"$KAFKA_PASSWORD"/g" ./kafka-ui.yaml | helm install kafka-ui kafka-ui/kafka-ui -n infra --create-namespace -f - '
 ```
 **Note:** more information in https://docs.kafka-ui.provectus.io/configuration/helm-charts/quick-start
+Wait until is ready to process requests running:
+```shell
+kubectl wait --namespace infra --for=condition=ready pod --selector=app.kubernetes.io/instance=kafka-ui --timeout=90s
+```
 
 ### 13. Create topic (optional)
 
@@ -196,9 +242,9 @@ helm install ecomm-monitoring ./../k8s/10-monitoring --namespace ecomm-kind --cr
 helm install ecomm-users ./../k8s/20-users --namespace ecomm-kind --create-namespace -f ./../k8s/20-users/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 helm install ecomm-products ./../k8s/30-products --namespace ecomm-kind --create-namespace -f ./../k8s/30-products/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
 helm install ecomm-orders ./../k8s/40-orders --namespace ecomm-kind --create-namespace -f ./../k8s/40-orders/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
-helm install ecomm-admin-bff ./../k8s/50-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/50-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
 helm install ecomm-limiter-processor ./../k8s/60-limiter-processor --namespace ecomm-kind --create-namespace -f ./../k8s/60-limiter-processor/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 helm install ecomm-limiter-kafka-mps ./../k8s/70-limiter-kafka-mps --namespace ecomm-kind --create-namespace -f ./../k8s/70-limiter-kafka-mps/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
+helm install ecomm-admin-bff ./../k8s/50-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/50-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane)
 helm install ecomm-gateway-admin-bff ./../k8s/80-gateway-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/80-gateway-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 ```
 
@@ -222,9 +268,9 @@ kubectl run -n ecomm-kind -i --tty load-generator --rm --image=busybox --restart
 
 ```shell
 helm uninstall --namespace ecomm-kind ecomm-gateway-admin-bff
+helm uninstall --namespace ecomm-kind ecomm-admin-bff
 helm uninstall --namespace ecomm-kind ecomm-limiter-kafka-mps
 helm uninstall --namespace ecomm-kind ecomm-limiter-processor
-helm uninstall --namespace ecomm-kind ecomm-admin-bff
 helm uninstall --namespace ecomm-kind ecomm-orders
 helm uninstall --namespace ecomm-kind ecomm-products
 helm uninstall --namespace ecomm-kind ecomm-users
@@ -238,6 +284,7 @@ helm uninstall --namespace infra kafka-ui
 helm uninstall --namespace infra kafka
 helm uninstall --namespace monitoring jaeger
 helm uninstall --namespace monitoring loki
+helm uninstall --namespace monitoring grafana
 helm uninstall --namespace monitoring prometheus
 kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 helm uninstall --namespace monitoring metrics-server 

@@ -12,7 +12,7 @@ allInOne:
           name: otlp-http
           port: 4318
 storage:
-  type: memory
+  type: badger
 agent:
   enabled: false
 collector:

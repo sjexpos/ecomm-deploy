@@ -2,9 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: monitoring-service-monitor
-  labels:
-    app: monitoring-service-monitor
-    release: prometheus-operator
   namespace: {{ .Release.Namespace }}
 spec:
   selector:

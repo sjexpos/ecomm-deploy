@@ -13,6 +13,7 @@ nodes:
       nodeRegistration:
         kubeletExtraArgs:
           node-labels: "ingress-ready=true"
+          system-reserved: memory=2Gi,cpu=1
   extraPortMappings:
   - containerPort: 80
     hostPort: 80
@@ -22,5 +23,24 @@ nodes:
     protocol: TCP
 # the three workers
 - role: worker
+  kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        kubeletExtraArgs:
+          system-reserved: memory=8Gi,cpu=5
 - role: worker
+  kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        kubeletExtraArgs:
+          system-reserved: memory=8Gi,cpu=5
 - role: worker
+  kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        kubeletExtraArgs:
+          system-reserved: memory=8Gi,cpu=5
+

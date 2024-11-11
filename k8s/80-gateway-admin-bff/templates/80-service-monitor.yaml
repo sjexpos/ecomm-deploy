@@ -2,9 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: gateway-admin-bff-monitor
-  labels:
-    app: gateway-admin-bff-monitor
-    release: prometheus-operator
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
