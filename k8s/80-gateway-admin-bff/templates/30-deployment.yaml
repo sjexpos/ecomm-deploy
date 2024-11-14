@@ -23,6 +23,9 @@ spec:
             - containerPort: 7000
               name: http-port
               protocol: TCP
+            - containerPort: 7001
+              name: management-port
+              protocol: TCP
           resources:
             requests:
               cpu: 200m
@@ -33,14 +36,14 @@ spec:
           readinessProbe:
             httpGet:
               path: "/actuator/health/readiness"
-              port: http-port
+              port: management-port
             initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 1
           livenessProbe:
             httpGet:
               path: "/actuator/health/liveness"
-              port: http-port
+              port: management-port
             initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 1

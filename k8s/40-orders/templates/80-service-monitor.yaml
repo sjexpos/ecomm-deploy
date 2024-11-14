@@ -11,7 +11,7 @@ spec:
     matchNames:
       - {{ .Release.Namespace }}
   endpoints:
-    - port: metrics-traffic
-      path: "/metrics"
+    - port: management-traffic
+      path: "/actuator/prometheus"
       interval: 5s
       scrapeTimeout: 5s

@@ -7,6 +7,7 @@ data:
   JAVA_XMS: {{ .Values.admin_bff_java_xms }}
   JAVA_XMX: {{ .Values.admin_bff_java_xmx }}
   PORT: '7000'
+  MANAGEMENT_PORT: '7001'
   MONITORING_URL: '{{ .Values.admin_bff_monitoring_url }}'
   {{ if not (empty .Values.kind_gateway_id) }}
   REDIS_HOST: '{{ .Values.kind_gateway_id }}'

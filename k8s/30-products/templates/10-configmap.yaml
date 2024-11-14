@@ -7,6 +7,7 @@ data:
   JAVA_XMS: {{ .Values.products_service_java_xms }}
   JAVA_XMX: {{ .Values.products_service_java_xmx }}
   PORT: '7000'
+  MANAGEMENT_PORT: '7001'
   MONITORING_URL: '{{ .Values.products_service_monitoring_url }}'
   {{ if not (empty .Values.kind_gateway_id) }}
   DATABASE_HOST: '{{ .Values.kind_gateway_id }}'

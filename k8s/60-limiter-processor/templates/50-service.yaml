@@ -12,5 +12,9 @@ spec:
       port: 8000
       protocol: TCP
       targetPort: 7000
+    - name: management-traffic
+      port: 8001
+      protocol: TCP
+      targetPort: 7001
   selector:
     app: limiter-processor-service

@@ -7,6 +7,7 @@ data:
   JAVA_XMS: {{ .Values.limiter_kafka_mps_java_xms }}
   JAVA_XMX: {{ .Values.limiter_kafka_mps_java_xmx }}
   PORT: '7000'
+  MANAGEMENT_PORT: '7001'
   MONITORING_URL: '{{ .Values.limiter_kafka_mps_monitoring_url }}'
   KAFKA_SERVERS: '{{ .Values.limiter_kafka_mps_kafka_servers }}'
   KAFKA_SECURITY_PROTOCOL: '{{ .Values.limiter_kafka_mps_kafka_security_protocol }}'

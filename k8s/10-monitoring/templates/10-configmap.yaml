@@ -7,4 +7,4 @@ data:
   JAVA_XMS: {{ .Values.monitoring_service_java_xms }}
   JAVA_XMX: {{ .Values.monitoring_service_java_xmx }}
   PORT: '7000'
-
+  MANAGEMENT_PORT: '7001'
