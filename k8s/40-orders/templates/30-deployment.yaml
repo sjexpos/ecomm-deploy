@@ -23,6 +23,9 @@ spec:
             - containerPort: 7000
               name: http-port
               protocol: TCP
+            - containerPort: 9464
+              name: metrics-port
+              protocol: TCP
           resources:
             requests:
               cpu: 1000m

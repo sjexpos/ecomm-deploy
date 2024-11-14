@@ -25,12 +25,12 @@
 #   - 172.16.208.90     9100       => kafka-ui
 #   - 172.16.208.100   10001       => gateway-swaggger-ui DISABLED
 #   - 172.16.208.110    9411       => zipkin DISABLED
-#   - 172.16.208.120    4318/16686 => jaeger
-#   - 172.16.208.130    10000      => prometheus
+#   - 172.16.208.120    4317/4318/16686 => jaeger
+#   - 172.16.208.130    9090       => prometheus
 #   - 172.16.208.131    9187       => postgresql-exporter
 #   - 172.16.208.140    3000       => grafana
 #
-# monitoring        9090
+# monitoring        10000
 # user-service      6061
 # products-service  6062
 # orders-service    6063
@@ -499,7 +499,7 @@ services:
     restart: unless-stopped
     profiles: ["", "local"]
     ports:
-      - 10000:9090
+      - 9090:9090
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
