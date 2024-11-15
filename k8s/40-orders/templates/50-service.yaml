@@ -16,5 +16,9 @@ spec:
       port: 8001
       protocol: TCP
       targetPort: 7001
+    - name: metrics-traffic
+      port: 8002
+      protocol: TCP
+      targetPort: 9464
   selector:
     app: orders-service

@@ -26,6 +26,9 @@ spec:
             - containerPort: 7001
               name: management-port
               protocol: TCP
+            - containerPort: 9464
+              name: metrics-port
+              protocol: TCP
           resources:
             requests:
               cpu: 1000m

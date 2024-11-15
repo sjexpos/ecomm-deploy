@@ -33,7 +33,7 @@
 # monitoring        10000
 # user-service      6061
 # products-service  6062
-# orders-service    6063
+# orders-service    6063,9464
 # limiter-kafka-mps 7070
 # limiter-processor 7071
 # admin-bff         5051
