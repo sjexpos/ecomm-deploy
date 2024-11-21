@@ -1,7 +1,7 @@
 
 orders_pod_role_oidc_access:
 
-orders_service_image: sjexposecomm/orders-service:feature-otel-agent
+orders_service_image: sjexposecomm/orders-service:latest
 orders_service_java_xms: 256m
 orders_service_java_xmx: 1g
 orders_service_monitoring_url: http://monitoring-service:9090

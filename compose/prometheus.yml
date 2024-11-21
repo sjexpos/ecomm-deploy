@@ -30,12 +30,12 @@ scrape_configs:
         labels:
           application: 'Users service'
 
-  - job_name: 'products-service'
-    metrics_path: '/actuator/prometheus'
+  - job_name: 'products-service-collector'
+    metrics_path: '/metrics'
     static_configs:
-      - targets: ['host.docker.internal:6062']
+      - targets: ['otel-collector:8889']
         labels:
-          application: 'Products service'
+          application: 'Products service (collector)'
 
   - job_name: 'orders-service'
     metrics_path: '/metrics'

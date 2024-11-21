@@ -1,0 +1,46 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+
+processors:
+  metricstransform:
+    transforms:
+      - include: system.cpu.usage
+        action: update
+        operations:
+          - action: update_label
+            label: instance
+            new_label: myinstance
+      - include: system.cpu.count
+        action: update
+        operations:
+          - action: add_label
+            new_label: version
+            new_value: opentelemetry collector {{version}}
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+#    const_labels:
+#      application: Products service
+  otlp:
+    endpoint: "http://jaeger:4317"
+    tls:
+      insecure: true
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+#      processors: [metricstransform]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      exporters: [otlp]
+    logs:
+      receivers: [otlp]
+      exporters: [debug]

@@ -40,6 +40,12 @@ echo "Waiting for Jaeger ..."
 sleep 2s
 kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=jaeger --timeout=300s
 
+# Installing Open Telemetry Collector
+helm install otel-collector -n monitoring open-telemetry/opentelemetry-collector --create-namespace -f ./otel-collector-values.yaml > /dev/null
+echo "Waiting for otel-collector ..."
+sleep 2s
+kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=otel-collector --timeout=300s
+
 # Installing Kafka
 helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka -n infra --create-namespace > /dev/null
 echo "Waiting for Kafka ..."
