@@ -1,0 +1,71 @@
+# https://opentelemetry.io/docs/kubernetes/helm/collector/
+image:
+  repository: otel/opentelemetry-collector-contrib
+
+mode: deployment
+
+config:
+  receivers:
+    jaeger: null
+    prometheus: null
+    zipkin: null
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http: null
+  exporters:
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+    otlp:
+      endpoint: "http://jaeger-collector.monitoring:4317"
+      tls:
+        insecure: true
+    debug:
+      verbosity: detailed
+
+  service:
+    pipelines:
+      metrics:
+        receivers: [otlp]
+        exporters: [prometheus]
+      traces:
+        receivers: [otlp]
+        exporters: [otlp]
+      logs:
+        receivers: [otlp]
+        exporters: [debug]
+
+ports:
+  otlp:
+    enabled: true
+  otlp-http:
+    enabled: true
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+  metrics:
+    enabled: false
+  prometheus:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    hostPort: 8889
+    protocol: TCP
+
+resources:
+  limits:
+    memory: 512Mi
+
+serviceMonitor:
+  enabled: true
+  metricsEndpoints:
+    - port: prometheus
+      path: "/metrics"
+      interval: 5s
+      scrapeTimeout: 5s

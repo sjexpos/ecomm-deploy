@@ -115,7 +115,7 @@ kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.
 ```shell
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
-helm install prometheus bitnami/kube-prometheus -n monitoring --create-namespace
+helm install prometheus bitnami/kube-prometheus -n monitoring --create-namespace --set prometheus.enableFeatures={otlp-write-receiver}
 ```
 Wait until is ready to process requests running:
 ```shell
@@ -164,15 +164,23 @@ Then click on Save and Test.
 You can import a Loki dashboard to see services logs. A good option is https://grafana.com/grafana/dashboards/16966-container-log-dashboard/. You are able to import it using the ID 16966.
 
 #### Load interesting dashboards
-ID: 19004 - URL: https://grafana.com/grafana/dashboards/19004-spring-boot-statistics/
-ID: 15661 - URL: https://grafana.com/grafana/dashboards/15661-1-k8s-for-prometheus-dashboard-20211010/
-ID: 15758 - URL: https://grafana.com/grafana/dashboards/15758-kubernetes-views-namespaces/
-ID: 15760 - URL: https://grafana.com/grafana/dashboards/15760-kubernetes-views-pods/
-ID: 15757 - URL: https://grafana.com/grafana/dashboards/15757-kubernetes-views-global/
-ID: 15759 - URL: https://grafana.com/grafana/dashboards/15759-kubernetes-views-nodes/
-ID: 15761 - URL: https://grafana.com/grafana/dashboards/15761-kubernetes-system-api-server/
-ID: 15762 - URL: https://grafana.com/grafana/dashboards/15762-kubernetes-system-coredns/
-ID: 19105 - URL: https://grafana.com/grafana/dashboards/19105-prometheus/
+
+Grafana.com dashboard id list:
+
+| Dashboard                          | ID    | URL                                                                                   |
+|:-----------------------------------|:------|:--------------------------------------------------------------------------------------|
+| k8s-addons-prometheus.json         | 19105 | https://grafana.com/grafana/dashboards/19105-prometheus/                              |
+| k8s-addons-trivy-operator.json     | 16337 | https://grafana.com/grafana/dashboards/16337-trivy-operator-vulnerabilities/          |
+| k8s-system-api-server.json         | 15761 | https://grafana.com/grafana/dashboards/15761-kubernetes-system-api-server/            |
+| k8s-system-coredns.json            | 15762 | https://grafana.com/grafana/dashboards/15762-kubernetes-system-coredns/               |
+| k8s-views-global.json              | 15757 | https://grafana.com/grafana/dashboards/15757-kubernetes-views-global/                 |
+| k8s-views-namespaces.json          | 15758 | https://grafana.com/grafana/dashboards/15758-kubernetes-views-namespaces/             |
+| k8s-views-nodes.json               | 15759 | https://grafana.com/grafana/dashboards/15759-kubernetes-views-nodes/                  |
+| k8s-views-pods.json                | 15760 | https://grafana.com/grafana/dashboards/15760-kubernetes-views-pods/                   |
+|                                    | 15661 | https://grafana.com/grafana/dashboards/15661-1-k8s-for-prometheus-dashboard-20211010/ |
+|                                    | 19004 | https://grafana.com/grafana/dashboards/19004-spring-boot-statistics/                  |
+|                                    | 16966 | https://grafana.com/grafana/dashboards/16966-container-log-dashboard/                 |
+
 
 ### 10. Install Jaeger
 
@@ -186,7 +194,15 @@ Wait until is ready to process requests running:
 kubectl wait --namespace monitoring --for=condition=ready pod --selector=app.kubernetes.io/instance=jaeger --timeout=90s
 ```
 
-### 11. Install Kafka
+### 11. Install OpenTelemetry collector
+
+```shell
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+helm install otel-collector -n monitoring open-telemetry/opentelemetry-collector --create-namespace -f ./otel-collector-values.yaml
+```
+
+### 12. Install Kafka
 ```shell
 helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka -n infra --create-namespace
 ```
@@ -200,7 +216,7 @@ Kafka password can be gotten if you run the following command
 kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1
 ```
 
-### 12. Install Kafka UI
+### 13. Install Kafka UI
 ```shell
 helm repo add kafka-ui https://provectus.github.io/kafka-ui-charts
 helm repo update
@@ -212,7 +228,7 @@ Wait until is ready to process requests running:
 kubectl wait --namespace infra --for=condition=ready pod --selector=app.kubernetes.io/instance=kafka-ui --timeout=90s
 ```
 
-### 13. Create topic (optional)
+### 14. Create topic (optional)
 
 It's a good idea to create topics before ecomm app starts, because you will be able to define partitions and replication factor for each.
 In case that topics are not created, app will create them with partition and replication factor of 1.
@@ -235,7 +251,7 @@ Create following topics:
   partitions: 10
   replication-factor: 2
 
-### 14. Install ecomm
+### 15. Install ecomm
 
 ```shell
 helm install ecomm-monitoring ./../k8s/10-monitoring --namespace ecomm-kind --create-namespace -f ./../k8s/10-monitoring/kind.yaml
@@ -248,7 +264,7 @@ helm install ecomm-admin-bff ./../k8s/50-admin-bff --namespace ecomm-kind --crea
 helm install ecomm-gateway-admin-bff ./../k8s/80-gateway-admin-bff --namespace ecomm-kind --create-namespace -f ./../k8s/80-gateway-admin-bff/kind.yaml --set kind_gateway_id=$(docker inspect --format='{{.NetworkSettings.Networks.kind.Gateway}}' kind-control-plane) --set kafka_user=user1 --set kafka_password=$(kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1)
 ```
 
-### 15. Useful commands 
+### 16. Useful commands 
 
 Monitoring HPA
 ```shell
@@ -282,6 +298,7 @@ helm uninstall --namespace ecomm-kind ecomm-monitoring
 ```shell
 helm uninstall --namespace infra kafka-ui
 helm uninstall --namespace infra kafka
+helm uninstall --namespace monitoring otel-collector
 helm uninstall --namespace monitoring jaeger
 helm uninstall --namespace monitoring loki
 helm uninstall --namespace monitoring grafana

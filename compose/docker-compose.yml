@@ -4,31 +4,32 @@
 #      docker-compose up
 #
 # Exported ports
-#   - 172.16.208.10     6379       => redis
-#   - 172.16.208.11     6391/16391 => cluster redis - node 1 DISABLED
-#   - 172.16.208.12     6392/16392 => cluster redis - node 2 DISABLED
-#   - 172.16.208.13     6393/16393 => cluster redis - node 3 DISABLED
-#   - 172.16.208.14                => redis-cluster-configure DISABLED
-#   - 172.16.208.15     5540       => redisinsight
-#   - 172.16.208.20     5432       => postgres
-#   - 172.16.208.21                => flyway_users
-#   - 172.16.208.22                => flyway_products
-#   - 172.16.208.23                => flyway_orders
-#   - 172.16.208.30     5050       => gpadmin4
-#   - 172.16.208.40     9200/9600  => OpenSearch (node 1)
-#   - 172.16.208.50     5601       => OpenSearch Dashboard
-#   - 172.16.208.60     4566/4571  => localstack
-#   - 172.16.208.70     32181/2888/3888 => zookeeper
-#   - 172.16.208.80     9091  => kafka
-#   - 172.16.208.81     9092  => kafka
-#   - 172.16.208.82     9093  => kafka
-#   - 172.16.208.90     9100       => kafka-ui
-#   - 172.16.208.100   10001       => gateway-swaggger-ui DISABLED
-#   - 172.16.208.110    9411       => zipkin DISABLED
-#   - 172.16.208.120    4317/4318/16686 => jaeger
-#   - 172.16.208.130    9090       => prometheus
-#   - 172.16.208.131    9187       => postgresql-exporter
-#   - 172.16.208.140    3000       => grafana
+#   - 172.16.208.10     6379             => redis
+#   - 172.16.208.11     6391/16391       => cluster redis - node 1 DISABLED
+#   - 172.16.208.12     6392/16392       => cluster redis - node 2 DISABLED
+#   - 172.16.208.13     6393/16393       => cluster redis - node 3 DISABLED
+#   - 172.16.208.14                      => redis-cluster-configure DISABLED
+#   - 172.16.208.15     5540             => redisinsight
+#   - 172.16.208.20     5432             => postgres
+#   - 172.16.208.21                      => flyway_users
+#   - 172.16.208.22                      => flyway_products
+#   - 172.16.208.23                      => flyway_orders
+#   - 172.16.208.30     5050             => gpadmin4
+#   - 172.16.208.40     9200/9600        => OpenSearch (node 1)
+#   - 172.16.208.50     5601             => OpenSearch Dashboard
+#   - 172.16.208.60     4566/4571        => localstack
+#   - 172.16.208.70     32181/2888/3888  => zookeeper
+#   - 172.16.208.80     9091             => kafka
+#   - 172.16.208.81     9092             => kafka
+#   - 172.16.208.82     9093             => kafka
+#   - 172.16.208.90     9100             => kafka-ui
+#   - 172.16.208.100   10001             => gateway-swaggger-ui DISABLED
+#   - 172.16.208.110    9411             => zipkin DISABLED
+#   - 172.16.208.120    4318,16686       => jaeger
+#   - 172.16.208.130    9090             => prometheus
+#   - 172.16.208.131    9187             => postgresql-exporter
+#   - 172.16.208.140    3000             => grafana
+#   - 172.16.208.150    4317,8889        => otel-collector
 #
 # monitoring        10000
 # user-service      6061
@@ -484,14 +485,18 @@ services:
     restart: unless-stopped
     profiles: ["", "local"]
     ports:
-      - 4317:4317
-      - 4318:4318
-      - 16686:16686
+      - "4318:4318"
+      - "16686:16686"
     networks:
       backend:
         ipv4_address: 172.16.208.120
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    healthcheck:
+      test: nc -vz localhost 4318
+      interval: 10s
+      timeout: 10s
+      retries: 3
 
   prometheus:
     image: prom/prometheus:v2.55.0
@@ -507,13 +512,11 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.130
-    command:
-      - "--enable-feature=otlp-write-receiver"
-      - "--log.level=debug"
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-      - "--web.console.templates=/usr/share/prometheus/consoles"
+    healthcheck:
+      test: nc -vz localhost 9090
+      interval: 10s
+      timeout: 10s
+      retries: 3
 
   postgresql-exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
@@ -545,3 +548,36 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.140
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: nc -vz localhost 3000
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.113.0
+    container_name: otel-collector
+    restart: unless-stopped
+    profiles: ["", "local"]
+    ports:
+      - "4317:4317" # OTLP gRPC receiver port
+      - "8889:8889" # Promentheus exporter metrics
+    volumes:
+      - ./otel-collector-config.yml:/etc/config.yml
+    networks:
+      backend:
+        ipv4_address: 172.16.208.150
+    command: ["--config=/etc/config.yml"]
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: nc -vz localhost 4317
+      interval: 10s
+      timeout: 10s
+      retries: 3

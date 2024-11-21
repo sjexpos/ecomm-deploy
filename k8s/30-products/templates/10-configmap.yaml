@@ -36,4 +36,5 @@ data:
   AWS_DEFAULT_REGION: 'us-east-1'
   AWS_REGION: 'us-east-1'
   TRACING_URL: '{{ .Values.products_service_tracing_url }}'
-
+  OTEL_JAVAAGENT_DEBUG: 'true'
+  METRICS_URL: '{{ .Values.products_service_metrics_url }}'

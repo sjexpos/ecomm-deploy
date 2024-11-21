@@ -14,7 +14,8 @@ products_service_redis_host:
 products_service_redis_port: 6379
 products_service_assets_bucket: ecomm-assets-dev
 products_service_opensearch:
-products_service_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
+products_service_tracing_url: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317
+products_service_metrics_url: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317
 
 # Special parameter to set by helm on command line
 # kind_gateway_id:
