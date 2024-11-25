@@ -59,9 +59,9 @@ scrape_configs:
           application: 'Limiter processor'
 
   - job_name: 'admin-bff'
-    metrics_path: '/actuator/prometheus'
+    metrics_path: '/metrics'
     static_configs:
-      - targets: ['host.docker.internal:5051']
+      - targets: ['host.docker.internal:9465']
         labels:
           application: 'Admin backend for frontend'
 
