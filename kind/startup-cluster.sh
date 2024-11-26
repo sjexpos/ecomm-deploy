@@ -58,6 +58,23 @@ echo "Waiting for Kafka UI ..."
 sleep 2s
 kubectl wait --namespace infra --for=condition=ready pod --selector=app.kubernetes.io/instance=kafka-ui --timeout=300s
 
+export KAFKA_PASSWORD=`kubectl get secret kafka-user-passwords --namespace infra -o jsonpath='{.data.client-passwords}' | base64 -d | cut -d , -f 1`
+
+echo "kakfa_user: user1"
+echo "kafka_password: $KAFKA_PASSWORD"
+
+# Creating topic "incoming-request-topic"
+kubectl run -n infra -i --tty create-incoming-request-topic --rm --image=bitnami/kafka:latest --restart=Never --env="KAFKA_PASSWORD=$KAFKA_PASSWORD" -- /bin/sh -c \
+  "echo 'security.protocol=SASL_PLAINTEXT' >> /tmp/client-config.properties && echo 'sasl.mechanism=PLAIN' >> /tmp/client-config.properties && echo 'sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"$KAFKA_PASSWORD\";' >> /tmp/client-config.properties && cat /tmp/client-config.properties && kafka-topics.sh --command-config /tmp/client-config.properties --create --topic incoming-request-topic --bootstrap-server kafka.infra.svc.cluster.local:9092 --partitions 100 --replication-factor 2"
+
+# Creating topic "request-dlq"
+kubectl run -n infra -i --tty create-request-dlq --rm --image=bitnami/kafka:latest --restart=Never --env="KAFKA_PASSWORD=$KAFKA_PASSWORD" -- /bin/sh -c \
+  "echo 'security.protocol=SASL_PLAINTEXT' >> /tmp/client-config.properties && echo 'sasl.mechanism=PLAIN' >> /tmp/client-config.properties && echo 'sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"$KAFKA_PASSWORD\";' >> /tmp/client-config.properties && cat /tmp/client-config.properties && kafka-topics.sh --command-config /tmp/client-config.properties --create --topic request-dlq --bootstrap-server kafka.infra.svc.cluster.local:9092 --partitions 1 --replication-factor 2"
+
+# Creating topic "blacklisted-users-topic"
+kubectl run -n infra -i --tty create-blacklisted-users-topic --rm --image=bitnami/kafka:latest --restart=Never --env="KAFKA_PASSWORD=$KAFKA_PASSWORD" -- /bin/sh -c \
+  "echo 'security.protocol=SASL_PLAINTEXT' >> /tmp/client-config.properties && echo 'sasl.mechanism=PLAIN' >> /tmp/client-config.properties && echo 'sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"$KAFKA_PASSWORD\";' >> /tmp/client-config.properties && cat /tmp/client-config.properties && kafka-topics.sh --command-config /tmp/client-config.properties --create --topic blacklisted-users-topic --bootstrap-server kafka.infra.svc.cluster.local:9092 --partitions 10 --replication-factor 2"
+
 echo ""
 echo "======================================================"
 echo "It's ready to deploy ecomm services!!!"
