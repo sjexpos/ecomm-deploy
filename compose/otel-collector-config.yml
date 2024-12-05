@@ -2,17 +2,23 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: "0.0.0.0:4317"
+        endpoint: "0.0.0.0:14317"
+      http:
+        endpoint: "0.0.0.0:14318"
 
 processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/attributesprocessor
+  attributes:
+    actions:
+      - key: job_name
+        action: upsert
+        from_attribute: service.name
+  # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/metricstransformprocessor
   metricstransform:
     transforms:
-      - include: system.cpu.usage
-        action: update
-        operations:
-          - action: update_label
-            label: instance
-            new_label: myinstance
       - include: system.cpu.count
         action: update
         operations:
@@ -23,8 +29,6 @@ processors:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-#    const_labels:
-#      application: Products service
   otlp:
     endpoint: "http://jaeger:4317"
     tls:
@@ -36,10 +40,11 @@ service:
   pipelines:
     metrics:
       receivers: [otlp]
-#      processors: [metricstransform]
+      processors: [metricstransform]
       exporters: [prometheus]
     traces:
       receivers: [otlp]
+      processors: [batch, attributes]
       exporters: [otlp]
     logs:
       receivers: [otlp]
