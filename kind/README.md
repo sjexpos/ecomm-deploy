@@ -251,6 +251,14 @@ Create following topics:
   partitions: 10
   replication-factor: 2
 
+### 15. Install KEDA
+
+```shell
+helm repo add kedacore https://kedacore.github.io/charts
+helm repo update
+helm install keda -n keda kedacore/keda --create-namespace
+```
+
 ### 15. Install ecomm
 
 ```shell
@@ -278,6 +286,12 @@ Increase the load
 ```shell
 kubectl run -n ecomm-kind -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://users-service:8000/api; done"
 ```
+
+```shell
+kubectl -n ecomm-kind get scaledobject.keda.sh/prometheus-scaledobject
+kubectl -n ecomm-kind get hpa
+```
+
 ## Uninstallation
 
 ### 1. Uninstall ecomm
@@ -296,6 +310,7 @@ helm uninstall --namespace ecomm-kind ecomm-monitoring
 ### 2. Uninstall all tools
 
 ```shell
+helm uninstall --namespace keda keda
 helm uninstall --namespace infra kafka-ui
 helm uninstall --namespace infra kafka
 helm uninstall --namespace monitoring otel-collector

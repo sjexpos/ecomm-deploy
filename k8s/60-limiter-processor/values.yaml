@@ -9,4 +9,4 @@ limiter_processor_service_kafka_servers: default
 limiter_processor_service_tracing_url: default
 limiter_processor_service_redis_nodes: default
 limiter_processor_service_rate_limit: default
-
+limiter_processor_service_prometheus_url: default

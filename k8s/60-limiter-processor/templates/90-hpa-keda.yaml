@@ -1,0 +1,18 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: prometheus-scaledobject
+spec:
+  scaleTargetRef:
+    name: limiter-processor-service
+  pollingInterval: 15
+  cooldownPeriod: 30
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: {{ .Values.limiter_processor_service_prometheus_url }}
+        metricName: mps_pending_messages
+        threshold: "50"
+        query: rate(mps_pending_messages[1m])

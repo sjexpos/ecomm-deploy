@@ -13,6 +13,7 @@ limiter_processor_service_kafka_sasl_mechanism: PLAIN
 limiter_processor_service_kafka_extras: ''
 limiter_processor_service_tracing_url: http://jaeger-collector.monitoring:4318/v1/traces
 limiter_processor_service_rate_limit: 15
+limiter_processor_service_prometheus_url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
 
 # Special parameter to set by helm on command line
 # kafka_user:

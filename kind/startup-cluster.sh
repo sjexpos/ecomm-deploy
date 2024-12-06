@@ -75,6 +75,12 @@ kubectl run -n infra -i --tty create-request-dlq --rm --image=bitnami/kafka:late
 kubectl run -n infra -i --tty create-blacklisted-users-topic --rm --image=bitnami/kafka:latest --restart=Never --env="KAFKA_PASSWORD=$KAFKA_PASSWORD" -- /bin/sh -c \
   "echo 'security.protocol=SASL_PLAINTEXT' >> /tmp/client-config.properties && echo 'sasl.mechanism=PLAIN' >> /tmp/client-config.properties && echo 'sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"$KAFKA_PASSWORD\";' >> /tmp/client-config.properties && cat /tmp/client-config.properties && kafka-topics.sh --command-config /tmp/client-config.properties --create --topic blacklisted-users-topic --bootstrap-server kafka.infra.svc.cluster.local:9092 --partitions 10 --replication-factor 2"
 
+# Installing KEDA
+helm install keda kedacore/keda -n keda --create-namespace > /dev/null
+echo "Waiting for KEDA ..."
+sleep 2s
+kubectl wait --namespace keda --for=condition=ready pod --selector=app=keda-operator --timeout=300s
+
 echo ""
 echo "======================================================"
 echo "It's ready to deploy ecomm services!!!"
