@@ -17,6 +17,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO products_
 -- GRANT ALL PRIVILEGES ON DATABASE ecomm_orders TO orders_service;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO orders_service;
 
+-- GRANT ALL PRIVILEGES ON DATABASE ecomm_payments TO payments_service;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO payments_service;
+
 EOSQL
 
 echo "------------ Grants were executed ------------"

@@ -5,15 +5,16 @@
 #
 # Exported ports
 #   - 172.16.208.10     6379             => redis
-#   - 172.16.208.11     6391/16391       => cluster redis - node 1 DISABLED
-#   - 172.16.208.12     6392/16392       => cluster redis - node 2 DISABLED
-#   - 172.16.208.13     6393/16393       => cluster redis - node 3 DISABLED
-#   - 172.16.208.14                      => redis-cluster-configure DISABLED
+#   - 172.16.208.11     7001/17001       => cluster redis - node 1
+#   - 172.16.208.12     7002/17002       => cluster redis - node 2
+#   - 172.16.208.13     7003/17003       => cluster redis - node 3
+#   - 172.16.208.14                      => redis-cluster-configure
 #   - 172.16.208.15     5540             => redisinsight
 #   - 172.16.208.20     5432             => postgres
 #   - 172.16.208.21                      => flyway_users
 #   - 172.16.208.22                      => flyway_products
 #   - 172.16.208.23                      => flyway_orders
+#   - 172.16.208.24                      => flyway_payments
 #   - 172.16.208.30     5050             => gpadmin4
 #   - 172.16.208.40     9200/9600        => OpenSearch (node 1)
 #   - 172.16.208.50     5601             => OpenSearch Dashboard
@@ -58,61 +59,83 @@ services:
     image: 'redis:7.4-alpine'
     container_name: redis
     restart: unless-stopped
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "redis"]
     ports:
       - '6379:6379'
     networks:
       backend:
         ipv4_address: 172.16.208.10
 
-#  redis-1:
-#    image: "redis:7.4-alpine"
-#    ports:
-#      - "6391:6379"  # Map external port for Redis commands
-#      - "16391:16379"  # Map external port for Redis cluster bus
-#    networks:
-#      backend:
-#        ipv4_address: 172.16.208.11
-#    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-1.aof --cluster-announce-ip 172.16.208.11 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
-#
-#  redis-2:
-#    image: "redis:7.4-alpine"
-#    ports:
-#      - "6392:6379"  # Map external port for Redis commands
-#      - "16392:16379"  # Map external port for Redis cluster bus
-#    networks:
-#      backend:
-#        ipv4_address: 172.16.208.12
-#    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-2.aof --cluster-announce-ip 172.16.208.12 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
-#
-#  redis-3:
-#    image: "redis:7.4-alpine"
-#    ports:
-#      - "6393:6379"  # Map external port for Redis commands
-#      - "16393:16379"  # Map external port for Redis cluster bus
-#    networks:
-#      backend:
-#        ipv4_address: 172.16.208.13
-#    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-3.aof --cluster-announce-ip 172.16.208.13 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
-#
-#  redis-cluster-configure:
-#    image: "redis:7.4-alpine"
-#    networks:
-#      backend:
-#        ipv4_address: 172.16.208.14
-#    depends_on:
-#      - redis-1
-#      - redis-2
-#      - redis-3
-#    volumes:
-#      - ./:/mnt
-#    command: redis-cli --cluster create 172.16.208.11:6379 172.16.208.12:6379 172.16.208.13:6379 --cluster-replicas 0 --cluster-yes
+  redis-1:
+    image: "redis:7.4-alpine"
+    hostname: redis-1
+    profiles: ["", "local", "kind", "redis"]
+    ports:
+      - "7001:7001"  # Map external port for Redis commands
+      - "17001:17001"  # Map external port for Redis cluster bus
+    networks:
+      backend:
+        ipv4_address: 172.16.208.11
+    command: redis-server --maxmemory 1gb --port 7001 --bind 0.0.0.0 --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-1.aof --cluster-announce-ip 172.16.208.11 --cluster-announce-port 7001 --cluster-announce-bus-port 17001
+    healthcheck:
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      test: "bash -c 'redis-cli -h localhost -p 7001 ping | grep PONG && redis-cli -h localhost -p 7001 cluster info | grep cluster_state:ok'"
+
+  redis-2:
+    image: "redis:7.4-alpine"
+    hostname: redis-2
+    profiles: ["", "local", "kind", "redis"]
+    ports:
+      - "7002:7002"  # Map external port for Redis commands
+      - "17002:17002"  # Map external port for Redis cluster bus
+    networks:
+      backend:
+        ipv4_address: 172.16.208.12
+    command: redis-server --maxmemory 1gb --port 7002 --bind 0.0.0.0 --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-2.aof --cluster-announce-ip 172.16.208.12 --cluster-announce-port 7002 --cluster-announce-bus-port 17002
+    healthcheck:
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      test: "bash -c 'redis-cli -h localhost -p 7002 ping | grep PONG && redis-cli -h localhost -p 7002 cluster info | grep cluster_state:ok'"
+
+  redis-3:
+    image: "redis:7.4-alpine"
+    hostname: redis-3
+    profiles: ["", "local", "kind", "redis"]
+    ports:
+      - "7003:7003"  # Map external port for Redis commands
+      - "17003:17003"  # Map external port for Redis cluster bus
+    networks:
+      backend:
+        ipv4_address: 172.16.208.13
+    command: redis-server --maxmemory 1gb --port 7003 --bind 0.0.0.0 --maxmemory-policy allkeys-lru --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --appendfilename appendonly-3.aof --cluster-announce-ip 172.16.208.13 --cluster-announce-port 7003 --cluster-announce-bus-port 17003
+    healthcheck:
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      test: "bash -c 'redis-cli -h localhost -p 7003 ping | grep PONG && redis-cli -h localhost -p 7003 cluster info | grep cluster_state:ok'"
+
+  redis-cluster-configure:
+    image: "redis:7.4-alpine"
+    profiles: ["", "local", "kind", "redis"]
+    networks:
+      backend:
+        ipv4_address: 172.16.208.14
+    depends_on:
+      - redis-1
+      - redis-2
+      - redis-3
+    volumes:
+      - ./:/mnt
+    command: redis-cli --cluster create 172.16.208.11:7001 172.16.208.12:7002 172.16.208.13:7003 --cluster-replicas 0 --cluster-yes
 
   redisinsight:
     image: "redis/redisinsight:2.56"
     container_name: redisinsight
     restart: unless-stopped
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "redis"]
     ports:
       - "5540:5540"
     networks:
@@ -134,7 +157,7 @@ services:
     image: 'postgres:14.4'
     container_name: postgres
     restart: unless-stopped
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "postgres"]
     volumes:
       - './.data/postgres_data:/var/lib/postgresql/data'
       - './docker-compose-init-postgres.sh:/docker-entrypoint-initdb.d/init-db.sh'
@@ -159,7 +182,7 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.21
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "postgres"]
     volumes:
       - ${ECOMM_USERS_MODEL_SQL:-./../../users-service/db-scripts/src/main/resources}:/flyway/sql
       - ./:/mnt
@@ -172,7 +195,7 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.22
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "postgres"]
     volumes:
       - ${ECOMM_PRODUCTS_MODEL_SQL:-./../../products-service/db-scripts/src/main/resources}:/flyway/sql
       - ./:/mnt
@@ -185,7 +208,7 @@ services:
     networks:
       backend:
         ipv4_address: 172.16.208.23
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "postgres"]
     volumes:
       - ${ECOMM_ORDERS_MODEL_SQL:-./../../orders-service/db-scripts/src/main/resources}:/flyway/sql
       - ./:/mnt
@@ -193,11 +216,24 @@ services:
       - postgres
     entrypoint: ["/mnt/wait-for-it.sh", "postgres:5432", "-t", "300", "--", "/mnt/docker-compose-run-flyway.sh", "deployer", "1234", "ecomm_orders" ] 
 
+  flyway_payments:
+    image: flyway/flyway:8.5
+    networks:
+      backend:
+        ipv4_address: 172.16.208.24
+    profiles: ["", "local", "kind", "postgres"]
+    volumes:
+      - ${ECOMM_PAYMENTS_MODEL_SQL:-./../../payments-service/db-scripts}:/flyway/sql
+      - ./:/mnt
+    depends_on:
+      - postgres
+    entrypoint: ["/mnt/wait-for-it.sh", "postgres:5432", "-t", "300", "--", "/mnt/docker-compose-run-flyway.sh", "deployer", "1234", "ecomm_payments" ] 
+
   pgadmin4:
     image: 'thajeztah/pgadmin4'
     container_name: pgadmin4
     restart: unless-stopped
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "postgres"]
     ports:
       - '5050:5050'
     depends_on: 
@@ -210,7 +246,7 @@ services:
     image: opensearchproject/opensearch:2.16.0
     container_name: opensearch
     restart: unless-stopped
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "opensearch"]
     environment:
       - discovery.type=single-node
       - cluster.name=opensearch-cluster
@@ -239,7 +275,7 @@ services:
     image: opensearchproject/opensearch-dashboards:2.16.0
     container_name: opensearch-dashboards
     restart: unless-stopped
-    profiles: ["", "local", "kind"]
+    profiles: ["", "local", "kind", "opensearch"]
     ports:
       - 5601:5601
     expose:
@@ -252,44 +288,52 @@ services:
         ipv4_address: 172.16.208.50
 
   localstack:
-    image: 'localstack/localstack-full:0.12.11'
+    image: 'localstack/localstack:4.3.0'
     container_name: localstack
     restart: unless-stopped
     profiles: ["", "local", "kind"]
     ports:
-      - "127.0.0.1:53:53"
-      - "127.0.0.1:53:53/udp"
-      - "127.0.0.1:4566:4566"
-      - "127.0.0.1:4571:4571"
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
+      - DEBUG=${DEBUG:-0}
+      - IMAGE_NAME=localstack/localstack:4.3.0
+    healthcheck:
+      test: >-
+        curl -sf localhost:4566/_localstack/init/ready | grep -q '"completed": true,'
+      interval: 10s
+      timeout: 10s
+      retries: 3
     networks:
       backend:
         ipv4_address: 172.16.208.60
-    environment:
-      - START_WEB=1
-      - DEBUG=1
-      - HOSTNAME=localstack
-      - HOSTNAME_EXTERNAL=localstack
-      - PORT_WEB_UI=8888
-      - IMAGE_NAME=localstack/localstack-full:0.12.11
-      - DEFAULT_REGION=us-east-1
-      - LS_LOG=trace
-      - LAMBDA_EXECUTOR=docker
-      - LAMBDA_REMOTE_DOCKER=false
-      - LAMBDA_DOCKER_NETWORK=local-development
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - HOST_TMP_FOLDER=/tmp/localstack
-      - KINESIS_PROVIDER=kinesalite
-      - AWS_CBOR_DISABLE=1
-#      - DATA_DIR=/tmp/localstack/data
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "/tmp/localstack:/tmp/localstack"
+
+  localstack-resources:
+    image: 'amazon/aws-cli'
+    container_name: localstack-resources
+    profiles: ["", "local", "kind"]
+    networks:
+      backend:
+        ipv4_address: 172.16.208.61
+    environment:
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+    volumes:
+      - ./:/mnt
+    depends_on:
+      - localstack
+    entrypoint: ["/mnt/wait-for-it.sh", "localstack:5432", "-t", "10", "--", "/mnt/docker-compose-localstack-resources.sh" ] 
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.0
     container_name: zookeeper
     restart: unless-stopped
-    profiles: ["", "local"]
+    profiles: ["", "local", "kafka"]
     ports:
       - '32181:32181'
       - '2888:2888'
@@ -335,7 +379,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     container_name: kafka-broker-1
     restart: unless-stopped
-    profiles: ["", "local"]
+    profiles: ["", "local", "kafka"]
     ports:
       - '9091:9091'
     depends_on:
@@ -345,7 +389,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-1:9091,EXTERNAL://localhost:9091
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-1:9091,EXTERNAL://localhost:19091
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_NUM_PARTITIONS: 3
       KAFKA_JMX_PORT: 19101
@@ -367,7 +411,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     container_name: kafka-broker-2
     restart: unless-stopped
-    profiles: ["", "local"]
+    profiles: ["", "local", "kafka"]
     ports:
       - '9092:9092'
     depends_on:
@@ -377,7 +421,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-2:9092,EXTERNAL://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-2:9092,EXTERNAL://localhost:19092
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_NUM_PARTITIONS: 3
       KAFKA_JMX_PORT: 19102
@@ -399,7 +443,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     container_name: kafka-broker-3
     restart: unless-stopped
-    profiles: ["", "local"]
+    profiles: ["", "local", "kafka"]
     ports:
       - '9093:9093'
     depends_on:
@@ -409,7 +453,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-3:9093,EXTERNAL://localhost:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-3:9093,EXTERNAL://localhost:19093
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_NUM_PARTITIONS: 3
       KAFKA_JMX_PORT: 19103
@@ -431,7 +475,7 @@ services:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: kafka-ui
     restart: unless-stopped
-    profiles: ["", "local"]
+    profiles: ["", "local", "kafka"]
     ports:
       - "9100:8080"
     depends_on:
@@ -463,7 +507,7 @@ services:
     image: confluentinc/cp-kafka-rest:7.7.0
     container_name: kafka-rest-proxy
     restart: unless-stopped
-    profiles: ["", "local"]
+    profiles: ["", "local", "kafka"]
     ports:
       - "8082:8082"
     depends_on:
