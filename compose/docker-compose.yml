@@ -19,10 +19,12 @@
 #   - 172.16.208.40     9200/9600        => OpenSearch (node 1)
 #   - 172.16.208.50     5601             => OpenSearch Dashboard
 #   - 172.16.208.60     4566/4571        => localstack
+#   - 172.16.208.62     8181             => keycloak
 #   - 172.16.208.70     32181/2888/3888  => zookeeper
 #   - 172.16.208.80     9091             => kafka
 #   - 172.16.208.81     9092             => kafka
 #   - 172.16.208.82     9093             => kafka
+#   - 172.16.208.83     8081             => kafka-schema-registry
 #   - 172.16.208.90     9100             => kafka-ui
 #   - 172.16.208.91     8082             => kafka-rest-proxy
 #   - 172.16.208.100   10001             => gateway-swaggger-ui DISABLED
@@ -329,6 +331,25 @@ services:
       - localstack
     entrypoint: ["/mnt/wait-for-it.sh", "localstack:5432", "-t", "10", "--", "/mnt/docker-compose-localstack-resources.sh" ] 
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.2
+    container_name: keycloak
+    restart: unless-stopped
+    profiles: ["", "local", "kind"]
+    networks:
+      backend:
+        ipv4_address: 172.16.208.62
+    ports:
+      - "8181:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
+      # - KC_DB_VENDOR=postgres
+      # - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      # - KC_DB_USERNAME=keycloak
+      # - KC_DB_PASSWORD=keycloak
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.0
     container_name: zookeeper
@@ -471,6 +492,25 @@ services:
       options:
         max-size: "1m"
 
+  kafka-schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.0
+    container_name: kafka-schema-registry
+    restart: unless-stopped
+    profiles: ["", "local", "kafka"]
+    networks:
+      backend:
+        ipv4_address: 172.16.208.83
+    ports:
+      - '8081:8081'
+    depends_on:
+      - zookeeper
+      - kafka-broker-1
+      - kafka-broker-2
+      - kafka-broker-3
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka-broker-1:9091,kafka-broker-2:9092,kafka-broker-3:9093
+      SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: kafka-ui
@@ -485,13 +525,10 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: kafka-broker-1
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker-1:9091
-      KAFKA_CLUSTERS_0_METRICS_PORT: 19101
       KAFKA_CLUSTERS_1_NAME: kafka-broker-2
       KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: kafka-broker-2:9092
-      KAFKA_CLUSTERS_1_METRICS_PORT: 19102
       KAFKA_CLUSTERS_2_NAME: kafka-broker-3
       KAFKA_CLUSTERS_2_BOOTSTRAPSERVERS: kafka-broker-3:9093
-      KAFKA_CLUSTERS_2_METRICS_PORT: 19103
       DYNAMIC_CONFIG_ENABLED: 'true'
     networks:
       backend:
@@ -508,6 +545,9 @@ services:
     container_name: kafka-rest-proxy
     restart: unless-stopped
     profiles: ["", "local", "kafka"]
+    networks:
+      backend:
+        ipv4_address: 172.16.208.91
     ports:
       - "8082:8082"
     depends_on:
@@ -515,15 +555,21 @@ services:
       - kafka-broker-1
       - kafka-broker-2
       - kafka-broker-3
+      - kafka-schema-registry
+      - keycloak
     environment:
+      KAFKA_REST_HOST_NAME: kafka-rest-proxy
       KAFKA_REST_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka-broker-1:9091,PLAINTEXT://kafka-broker-2:9092,PLAINTEXT://kafka-broker-3:9093'
-      KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
-      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://192.0.2.11:8081'
-      KAFKA_REST_ZOOKEEPER_CONNECT: 'zookeeper:32181'
-    networks:
-      backend:
-        ipv4_address: 172.16.208.91
-
+      KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+      KAFKA_REST_SCHEMA_REGISTRY_URL: http://kafka-schema-registry:8081
+      # Configuracion OAuth
+      # KAFKA_REST_AUTHENTICATION: true
+      # KAFKA_REST_AUTHENTICATION_METHOD: OAUTH
+      # KAFKA_REST_AUTHENTICATION_REALM: ecomm
+      # KAFKA_REST_AUTHENTICATION_TYPE: Bearer
+      # KAFKA_REST_AUTHENTICATION_OAUTH_CLIENT_ID: ecomm-kafka-rest-client
+      # KAFKA_REST_AUTHENTICATION_OAUTH_CLIENT_SECRET: ecomm-kafka-rest-client-secret
+      # KAFKA_REST_AUTHENTICATION_OAUTH_TOKEN_ENDPOINT_URI: 'http://keycloak:8181/realms/ecomm/protocol/openid-connect/token'
 
 #  gateway-swaggger-ui:
 #    image: 'swaggerapi/swagger-ui:v5.17.14'
